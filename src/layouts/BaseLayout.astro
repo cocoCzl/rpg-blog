@@ -3,7 +3,12 @@ import '../styles/global.css'
 import config from '../../site.config'
 import { themePresets } from '../lib/theme'
 import { isConfigured } from '../lib/github-oauth'
+import BackgroundSwitcher from '../components/vue/BackgroundSwitcher.vue'
+import GlassNavbar from '../components/vue/GlassNavbar.vue'
+import GlassFooter from '../components/vue/GlassFooter.vue'
 import GithubLoginButton from '../components/vue/GithubLoginButton.vue'
+import SakuraEffect from '../components/vue/SakuraEffect.vue'
+import AuroraEffect from '../components/vue/AuroraEffect.vue'
 
 const preset = themePresets[config.theme.preset]
 const c = preset.colors
@@ -44,22 +49,19 @@ const pageDesc = Astro.props.description || config.description
     <style is:inline set:html={cssVars} />
   </head>
   <body style={`font-family: var(--font-body); background-color: var(--color-bg); color: var(--color-text);`}>
-    <nav class="fixed top-0 left-0 right-0 z-50 glass-card border-t-0 border-x-0 rounded-none" style="--tw-border-opacity: 0">
-      <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-        <a href="/" class="font-bold text-lg" style="font-family: var(--font-heading)">
-          {config.title}
-        </a>
-        <div class="flex items-center gap-4">
-          {
-            isConfigured() ? (
-              <GithubLoginButton client:load />
-            ) : null
-          }
-        </div>
-      </div>
-    </nav>
+    <BackgroundSwitcher client:load />
+    <SakuraEffect client:load />
+    <AuroraEffect client:load />
+    <GlassNavbar client:load>
+      {
+        isConfigured() ? (
+          <GithubLoginButton slot="actions" client:load />
+        ) : null
+      }
+    </GlassNavbar>
     <div class="pt-14">
       <slot />
     </div>
+    <GlassFooter client:load />
   </body>
 </html>
