@@ -49,7 +49,22 @@ function initSchema(db: Database.Database) {
       experience INTEGER NOT NULL DEFAULT 0,
       level INTEGER NOT NULL DEFAULT 1,
       current_title TEXT DEFAULT '',
+      hp INTEGER NOT NULL DEFAULT 100,
+      max_hp INTEGER NOT NULL DEFAULT 100,
+      mp INTEGER NOT NULL DEFAULT 50,
+      max_mp INTEGER NOT NULL DEFAULT 50,
+      atk INTEGER NOT NULL DEFAULT 10,
+      def INTEGER NOT NULL DEFAULT 5,
+      spd INTEGER NOT NULL DEFAULT 8,
+      luk INTEGER NOT NULL DEFAULT 3,
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS character_status_effects (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      effect_key TEXT NOT NULL UNIQUE,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      acquired_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS character_skills (

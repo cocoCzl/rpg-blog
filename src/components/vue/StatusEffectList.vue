@@ -1,0 +1,29 @@
+<template>
+  <div class="space-y-2">
+    <h4 class="text-xs font-bold flex items-center gap-2" style="color: var(--color-accent)">
+      <span>STATUS EFFECTS</span>
+    </h4>
+    <div v-for="eff in effects" :key="eff.key" class="flex items-center gap-2 py-1.5 px-2 rounded-lg border text-xs transition-all" :style="{ background: getBg(eff.effectType), borderColor: getBorder(eff.effectType) }">
+      <span>{{ eff.icon || '✨' }}</span>
+      <span class="font-bold flex-shrink-0" :style="{ color: eff.color || getTextColor(eff.effectType) }">{{ eff.name }}</span>
+      <span class="opacity-50 truncate">{{ eff.description }}</span>
+      <span v-if="eff.isActive" class="ml-auto w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" :style="{ background: eff.color || getTextColor(eff.effectType) }" />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import type { StatusEffect } from '../../lib/rpg-types'
+
+defineProps<{ effects: StatusEffect[] }>()
+
+function getBg(type: string) {
+  return type === 'BUFF' ? 'rgba(16,185,129,0.1)' : type === 'DEBUFF' ? 'rgba(239,68,68,0.1)' : 'rgba(195,177,225,0.1)'
+}
+function getBorder(type: string) {
+  return type === 'BUFF' ? 'rgba(16,185,129,0.2)' : type === 'DEBUFF' ? 'rgba(239,68,68,0.2)' : 'rgba(195,177,225,0.2)'
+}
+function getTextColor(type: string) {
+  return type === 'BUFF' ? '#10B981' : type === 'DEBUFF' ? '#EF4444' : '#C3B1E1'
+}
+</script>
