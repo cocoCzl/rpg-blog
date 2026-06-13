@@ -1,12 +1,41 @@
+import { randomBytes } from 'crypto'
+
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || ''
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || ''
 
+const stateStore = new Map<string, { redirectTo: string; createdAt: number }>()
+
+function generateState(): string {
+  return randomBytes(16).toString('hex')
+}
+
+function storeState(redirectTo: string): string {
+  const state = generateState()
+  stateStore.set(state, { redirectTo, createdAt: Date.now() })
+  // Cleanup expired states (5 minutes)
+  const now = Date.now()
+  for (const [key, val] of stateStore) {
+    if (now - val.createdAt > 5 * 60 * 1000) stateStore.delete(key)
+  }
+  return state
+}
+
+export function consumeState(state: string): string | null {
+  const entry = stateStore.get(state)
+  if (entry) {
+    stateStore.delete(state)
+    return entry.redirectTo
+  }
+  return null
+}
+
 export function getGithubAuthUrl(redirectTo?: string): string {
+  const state = storeState(redirectTo || '/')
   const params = new URLSearchParams({
     client_id: GITHUB_CLIENT_ID,
     redirect_uri: getRedirectUri(),
     scope: 'read:user',
-    state: redirectTo || '/',
+    state,
   })
   return `https://github.com/login/oauth/authorize?${params}`
 }

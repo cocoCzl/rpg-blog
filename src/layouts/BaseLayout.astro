@@ -3,12 +3,17 @@ import '../styles/global.css'
 import config from '../../site.config'
 import { themePresets } from '../lib/theme'
 import { isConfigured } from '../lib/github-oauth'
+import { loadLocale, setLocale } from '../lib/i18n'
 import BackgroundSwitcher from '../components/vue/BackgroundSwitcher.vue'
 import GlassNavbar from '../components/vue/GlassNavbar.vue'
 import GlassFooter from '../components/vue/GlassFooter.vue'
 import GithubLoginButton from '../components/vue/GithubLoginButton.vue'
 import SakuraEffect from '../components/vue/SakuraEffect.vue'
 import AuroraEffect from '../components/vue/AuroraEffect.vue'
+import ToastContainer from '../components/vue/ToastContainer.vue'
+
+await loadLocale(config.locale)
+setLocale(config.locale)
 
 const preset = themePresets[config.theme.preset]
 const c = preset.colors
@@ -63,5 +68,6 @@ const pageDesc = Astro.props.description || config.description
       <slot />
     </div>
     <GlassFooter client:load />
+    <ToastContainer client:load />
   </body>
 </html>

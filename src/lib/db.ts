@@ -13,6 +13,19 @@ function ensureDir(filePath: string) {
 
 let db: Database.Database | null = null
 
+let shutdownRegistered = false
+
+function registerShutdown() {
+  if (shutdownRegistered) return
+  shutdownRegistered = true
+  const cleanup = () => {
+    closeDb()
+    process.exit(0)
+  }
+  process.once('SIGTERM', cleanup)
+  process.once('SIGINT', cleanup)
+}
+
 export function getDb(): Database.Database {
   if (!db) {
     ensureDir(DB_PATH)
@@ -20,82 +33,101 @@ export function getDb(): Database.Database {
     db.pragma('journal_mode = WAL')
     db.pragma('foreign_keys = ON')
     initSchema(db)
+    registerShutdown()
   }
   return db
 }
 
+let schemaVersion = 0
+
 function initSchema(db: Database.Database) {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS admins (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT NOT NULL UNIQUE,
-      password_hash TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+  const currentVersion = db.pragma('user_version', { simple: true }) as number
+  schemaVersion = currentVersion
 
-    CREATE TABLE IF NOT EXISTS comments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      article_slug TEXT NOT NULL,
-      author_name TEXT NOT NULL,
-      author_avatar TEXT NOT NULL DEFAULT '',
-      author_github_id TEXT NOT NULL,
-      body TEXT NOT NULL,
-      approved INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+  if (currentVersion < 1) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS admins (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
 
-    CREATE TABLE IF NOT EXISTS character_state (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      experience INTEGER NOT NULL DEFAULT 0,
-      level INTEGER NOT NULL DEFAULT 1,
-      current_title TEXT DEFAULT '',
-      hp INTEGER NOT NULL DEFAULT 100,
-      max_hp INTEGER NOT NULL DEFAULT 100,
-      mp INTEGER NOT NULL DEFAULT 50,
-      max_mp INTEGER NOT NULL DEFAULT 50,
-      atk INTEGER NOT NULL DEFAULT 10,
-      def INTEGER NOT NULL DEFAULT 5,
-      spd INTEGER NOT NULL DEFAULT 8,
-      luk INTEGER NOT NULL DEFAULT 3,
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+      CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        article_slug TEXT NOT NULL,
+        author_name TEXT NOT NULL,
+        author_avatar TEXT NOT NULL DEFAULT '',
+        author_github_id TEXT NOT NULL,
+        body TEXT NOT NULL,
+        approved INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
 
-    CREATE TABLE IF NOT EXISTS character_status_effects (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      effect_key TEXT NOT NULL UNIQUE,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      acquired_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+      CREATE TABLE IF NOT EXISTS character_state (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        experience INTEGER NOT NULL DEFAULT 0,
+        level INTEGER NOT NULL DEFAULT 1,
+        current_title TEXT DEFAULT '',
+        hp INTEGER NOT NULL DEFAULT 100,
+        max_hp INTEGER NOT NULL DEFAULT 100,
+        mp INTEGER NOT NULL DEFAULT 50,
+        max_mp INTEGER NOT NULL DEFAULT 50,
+        atk INTEGER NOT NULL DEFAULT 10,
+        def INTEGER NOT NULL DEFAULT 5,
+        spd INTEGER NOT NULL DEFAULT 8,
+        luk INTEGER NOT NULL DEFAULT 3,
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
 
-    CREATE TABLE IF NOT EXISTS character_skills (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      skill_key TEXT NOT NULL UNIQUE,
-      unlocked INTEGER NOT NULL DEFAULT 0,
-      unlocked_at TEXT
-    );
+      CREATE TABLE IF NOT EXISTS character_status_effects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        effect_key TEXT NOT NULL UNIQUE,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        acquired_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
 
-    CREATE TABLE IF NOT EXISTS character_equipment (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      equipment_key TEXT NOT NULL UNIQUE,
-      equipped INTEGER NOT NULL DEFAULT 0,
-      acquired_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+      CREATE TABLE IF NOT EXISTS character_skills (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        skill_key TEXT NOT NULL UNIQUE,
+        unlocked INTEGER NOT NULL DEFAULT 0,
+        unlocked_at TEXT
+      );
 
-    CREATE TABLE IF NOT EXISTS character_quests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      quest_key TEXT NOT NULL UNIQUE,
-      status TEXT NOT NULL DEFAULT 'locked',
-      progress INTEGER NOT NULL DEFAULT 0,
-      completed_at TEXT
-    );
+      CREATE TABLE IF NOT EXISTS character_equipment (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        equipment_key TEXT NOT NULL UNIQUE,
+        equipped INTEGER NOT NULL DEFAULT 0,
+        acquired_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
 
-    CREATE TABLE IF NOT EXISTS character_titles (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title_key TEXT NOT NULL UNIQUE,
-      unlocked INTEGER NOT NULL DEFAULT 0,
-      unlocked_at TEXT
-    );
-  `)
+      CREATE TABLE IF NOT EXISTS character_quests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        quest_key TEXT NOT NULL UNIQUE,
+        status TEXT NOT NULL DEFAULT 'locked',
+        progress INTEGER NOT NULL DEFAULT 0,
+        completed_at TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS character_titles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title_key TEXT NOT NULL UNIQUE,
+        unlocked INTEGER NOT NULL DEFAULT 0,
+        unlocked_at TEXT
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_comments_article_slug ON comments(article_slug);
+      CREATE INDEX IF NOT EXISTS idx_comments_approved ON comments(approved);
+      CREATE INDEX IF NOT EXISTS idx_comments_slug_approved ON comments(article_slug, approved);
+    `)
+
+    db.pragma('user_version = 1')
+    schemaVersion = 1
+  }
+}
+
+export function getSchemaVersion(): number {
+  return schemaVersion
 }
 
 export function closeDb() {

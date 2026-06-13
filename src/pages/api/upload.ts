@@ -5,6 +5,7 @@ import { join } from 'path'
 import { randomBytes } from 'crypto'
 
 const UPLOAD_DIR = process.env.UPLOAD_PATH || join(process.cwd(), 'public/uploads')
+const MAX_FILE_SIZE = 10 * 1024 * 1024
 
 function ext(name: string): string {
   const idx = name.lastIndexOf('.')
@@ -23,6 +24,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const file = formData.get('file') as File | null
   if (!file) {
     return new Response(JSON.stringify({ error: 'No file provided' }), { status: 400 })
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return new Response(JSON.stringify({ error: `File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit` }), { status: 400 })
   }
 
   const allowedTypes = ['image/png', 'image/jpeg', 'image/webp']

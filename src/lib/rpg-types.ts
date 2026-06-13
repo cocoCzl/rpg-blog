@@ -20,14 +20,14 @@ export interface Equipment {
 export type EquipmentSlot = 'WEAPON' | 'SUB_WEAPON' | 'HEAD' | 'BODY' | 'ACCESSORY_1' | 'ACCESSORY_2' | 'PET' | 'MOUNT'
 
 export const EQUIPMENT_SLOTS: { slot: EquipmentSlot; label: string }[] = [
-  { slot: 'WEAPON', label: '主武器' },
-  { slot: 'SUB_WEAPON', label: '副武器' },
-  { slot: 'HEAD', label: '头部' },
-  { slot: 'BODY', label: '身体' },
-  { slot: 'ACCESSORY_1', label: '饰品 1' },
-  { slot: 'ACCESSORY_2', label: '饰品 2' },
-  { slot: 'PET', label: '宠物' },
-  { slot: 'MOUNT', label: '坐骑' },
+  { slot: 'WEAPON', label: 'Weapon' },
+  { slot: 'SUB_WEAPON', label: 'Sub Weapon' },
+  { slot: 'HEAD', label: 'Head' },
+  { slot: 'BODY', label: 'Body' },
+  { slot: 'ACCESSORY_1', label: 'Accessory 1' },
+  { slot: 'ACCESSORY_2', label: 'Accessory 2' },
+  { slot: 'PET', label: 'Pet' },
+  { slot: 'MOUNT', label: 'Mount' },
 ]
 
 export interface Title {

@@ -12,11 +12,26 @@ export const GET: APIRoute = async ({ url }) => {
       headers: JSON_HEADER,
     })
   }
+  const page = Math.max(1, Number(url.searchParams.get('page')) || 1)
+  const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit')) || 50))
+  const offset = (page - 1) * limit
+
   const db = getDb()
   const comments = db.prepare(
-    'SELECT id, article_slug, author_name, author_avatar, body, created_at FROM comments WHERE article_slug = ? AND approved = 1 ORDER BY created_at DESC'
-  ).all(articleSlug)
-  return new Response(JSON.stringify(comments), { headers: JSON_HEADER })
+    'SELECT id, article_slug, author_name, author_avatar, body, created_at FROM comments WHERE article_slug = ? AND approved = 1 ORDER BY created_at DESC LIMIT ? OFFSET ?'
+  ).all(articleSlug, limit, offset)
+
+  const total = db.prepare(
+    'SELECT COUNT(*) as count FROM comments WHERE article_slug = ? AND approved = 1'
+  ).get(articleSlug) as { count: number }
+
+  return new Response(JSON.stringify({
+    comments,
+    total: total?.count || 0,
+    page,
+    limit,
+    totalPages: Math.ceil((total?.count || 0) / limit),
+  }), { headers: JSON_HEADER })
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {

@@ -29,6 +29,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { getCookie } from '../../lib/client-cookie'
 
 interface Comment {
   id: number
@@ -50,9 +51,13 @@ async function load() {
 }
 
 async function moderate(id: number, action: string) {
+  const csrfToken = getCookie('csrf_token')
   await fetch('/api/admin/comments', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-csrf-token': csrfToken || '',
+    },
     body: JSON.stringify({ id, action }),
   })
   await load()

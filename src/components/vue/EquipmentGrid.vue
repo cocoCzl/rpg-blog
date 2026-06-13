@@ -17,21 +17,16 @@
 
 <script setup lang="ts">
 import equipmentData from '../../../data/rpg/equipment'
-import { ref, onMounted } from 'vue'
+import type { RpgEquipmentState } from '../../lib/rpg-state-types'
 
-const equipped = ref<string[]>([])
+const props = defineProps<{
+  equipmentState: RpgEquipmentState[]
+}>()
 
-onMounted(async () => {
-  try {
-    const resp = await fetch('/api/rpg')
-    const data = await resp.json()
-    equipped.value = (data.equipment || []).filter((e: any) => e.equipped).map((e: any) => e.equipment_key)
-  } catch {}
-})
-
+const equippedSet = new Set((props.equipmentState ?? []).filter((e) => e.equipped).map((e) => e.equipment_key))
 const equipment = equipmentData
 
 function isEquipped(key: string) {
-  return equipped.value.includes(key)
+  return equippedSet.has(key)
 }
 </script>

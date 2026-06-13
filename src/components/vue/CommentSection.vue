@@ -69,6 +69,8 @@ interface GithubUser {
 }
 
 const comments = ref<Comment[]>([])
+const totalPages = ref(1)
+const currentPage = ref(1)
 const githubUser = ref<GithubUser | null>(null)
 const newComment = ref('')
 const submitting = ref(false)
@@ -78,7 +80,14 @@ onMounted(async () => {
     fetch(`/api/comments?article_slug=${props.articleSlug}`),
     fetch('/api/auth/me'),
   ])
-  comments.value = await commentsResp.json()
+  const data = await commentsResp.json()
+  if (Array.isArray(data)) {
+    comments.value = data
+  } else {
+    comments.value = data.comments || []
+    totalPages.value = data.totalPages || 1
+    currentPage.value = data.page || 1
+  }
   const meData = await meResp.json()
   if (meData.type === 'github') {
     githubUser.value = { login: meData.username, avatar_url: meData.avatar, id: 0 } as GithubUser
@@ -98,10 +107,17 @@ async function submitComment() {
       }),
     })
     if (resp.ok) {
+      const newCommentBody = newComment.value.trim()
       newComment.value = ''
-      // Reload comments
-      const r = await fetch(`/api/comments?article_slug=${props.articleSlug}`)
-      comments.value = await r.json()
+      if (githubUser.value) {
+        comments.value.unshift({
+          id: Date.now(),
+          author_name: githubUser.value.login,
+          author_avatar: githubUser.value.avatar_url,
+          body: newCommentBody,
+          created_at: new Date().toISOString(),
+        })
+      }
     }
   } finally {
     submitting.value = false

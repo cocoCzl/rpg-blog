@@ -13,6 +13,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { getCookie } from '../../lib/client-cookie'
 
 const fileInput = ref<HTMLInputElement>()
 const url = ref('')
@@ -30,7 +31,12 @@ async function handleUpload(e: Event) {
   messageType.value = 'success'
 
   try {
-    const resp = await fetch('/api/upload', { method: 'POST', body: formData })
+    const csrfToken = getCookie('csrf_token')
+    const resp = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'x-csrf-token': csrfToken || '' },
+      body: formData,
+    })
     const data = await resp.json()
     if (resp.ok) {
       url.value = data.url

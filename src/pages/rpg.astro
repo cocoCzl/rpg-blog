@@ -3,17 +3,68 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 import SkillTree from '../components/vue/SkillTree.vue'
 import EquipmentGrid from '../components/vue/EquipmentGrid.vue'
 import QuestLog from '../components/vue/QuestLog.vue'
+import CharacterPanel from '../components/vue/CharacterPanel.vue'
+import StatusEffectList from '../components/vue/StatusEffectList.vue'
+import AttributeBar from '../components/vue/AttributeBar.vue'
+import { getDb } from '../lib/db'
+import type { StatusEffect } from '../lib/rpg-types'
+import type { RpgSkillState, RpgEquipmentState, RpgQuestState } from '../lib/rpg-state-types'
+import { ATTRIBUTE_LABELS } from '../lib/rpg-types'
+import statusEffectsData from '../../data/rpg/status-effects'
+
+const db = getDb()
+const state = db.prepare('SELECT experience, level, current_title, hp, max_hp, mp, max_mp, atk, def, spd, luk FROM character_state LIMIT 1').get() as any
+const skills = db.prepare('SELECT skill_key, unlocked FROM character_skills').all() as RpgSkillState[]
+const equipment = db.prepare('SELECT equipment_key, equipped FROM character_equipment').all() as RpgEquipmentState[]
+const quests = db.prepare('SELECT quest_key, status, progress FROM character_quests').all() as RpgQuestState[]
+const dbStatusEffects = db.prepare('SELECT effect_key, is_active FROM character_status_effects').all() as { effect_key: string; is_active: number }[]
+
+const activeEffectKeys = new Set(dbStatusEffects.filter((e: any) => e.is_active).map((e: any) => e.effect_key))
+const statusEffects: StatusEffect[] = statusEffectsData.map((e) => ({
+  ...e,
+  isActive: activeEffectKeys.has(e.key),
+}))
+
+const rpgState = state || { experience: 0, level: 1, current_title: '', hp: 100, max_hp: 100, mp: 50, max_mp: 50, atk: 10, def: 5, spd: 8, luk: 3 }
+const attrs = [
+  { key: 'hp', value: rpgState.hp, max: rpgState.max_hp },
+  { key: 'mp', value: rpgState.mp, max: rpgState.max_mp },
+  { key: 'atk', value: rpgState.atk, max: 999 },
+  { key: 'def', value: rpgState.def, max: 999 },
+  { key: 'spd', value: rpgState.spd, max: 999 },
+  { key: 'luk', value: rpgState.luk, max: 999 },
+]
 ---
 
 <BaseLayout title="RPG Dashboard">
   <main class="min-h-screen" style="background: linear-gradient(to bottom right, var(--color-bg), var(--color-surface))">
     <div class="max-w-4xl mx-auto px-4 py-16 space-y-6">
       <h1 class="text-2xl font-bold" style="font-family: var(--font-heading)">RPG Dashboard</h1>
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SkillTree client:load />
-        <EquipmentGrid client:load />
+        <CharacterPanel state={rpgState} skills={skills} client:load />
+        <div class="glass-card p-5 space-y-3">
+          <h3 class="text-sm font-bold" style="color: var(--color-accent)">ATTRIBUTES</h3>
+          {attrs.map(attr => (
+            <AttributeBar
+              label={ATTRIBUTE_LABELS[attr.key]!.label}
+              value={attr.value}
+              max={attr.max}
+              color={ATTRIBUTE_LABELS[attr.key]!.color}
+              realLabel={ATTRIBUTE_LABELS[attr.key]!.realLabel}
+              client:load
+            />
+          ))}
+          <StatusEffectList effects={statusEffects} client:load />
+        </div>
       </div>
-      <QuestLog client:load />
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SkillTree unlockedSkills={skills} client:load />
+        <EquipmentGrid equipmentState={equipment} client:load />
+      </div>
+
+      <QuestLog questStates={quests} client:load />
     </div>
   </main>
 </BaseLayout>

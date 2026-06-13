@@ -32,7 +32,9 @@ export const GET: APIRoute = async ({ cookies }) => {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         })
-      } catch {}
+      } catch {
+        // Invalid cookie data, fall through to anonymous
+      }
     }
   }
 

@@ -20,10 +20,10 @@
       </div>
     </div>
 
-    <div v-if="skills.length" class="space-y-1">
+    <div v-if="unlockedSkills.length" class="space-y-1">
       <p class="text-xs font-medium" style="color: var(--color-text-secondary)">Skills</p>
       <div class="flex flex-wrap gap-1.5">
-        <span v-for="s in skills" :key="s.skill_key" class="px-2 py-0.5 rounded text-xs" style="background: var(--color-accent); color: var(--color-bg)">
+        <span v-for="s in unlockedSkills" :key="s.skill_key" class="px-2 py-0.5 rounded text-xs" style="background: var(--color-accent); color: var(--color-bg)">
           {{ s.skill_key }}
         </span>
       </div>
@@ -32,28 +32,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed } from 'vue'
+import type { RpgState, RpgSkillState } from '../../lib/rpg-state-types'
 
-const experience = ref(0)
-const level = ref(1)
-const currentTitle = ref('')
-const skills = ref<any[]>([])
-const titles = ref<any[]>([])
+const props = defineProps<{
+  state: RpgState
+  skills: RpgSkillState[]
+}>()
+
+const experience = computed(() => props.state?.experience ?? 0)
+const level = computed(() => props.state?.level ?? 1)
+const currentTitle = computed(() => props.state?.current_title ?? '')
+const unlockedSkills = computed(() => (props.skills ?? []).filter((s) => s.unlocked))
 
 const nextLevelExp = computed(() => level.value * level.value * 100)
 const expPercent = computed(() => Math.min(100, Math.round((experience.value / nextLevelExp.value) * 100)))
-
-onMounted(async () => {
-  try {
-    const resp = await fetch('/api/rpg')
-    const data = await resp.json()
-    if (data.state) {
-      experience.value = data.state.experience || 0
-      level.value = data.state.level || 1
-      currentTitle.value = data.state.current_title || ''
-    }
-    skills.value = (data.skills || []).filter((s: any) => s.unlocked)
-    titles.value = (data.titles || []).filter((t: any) => t.unlocked)
-  } catch {}
-})
 </script>

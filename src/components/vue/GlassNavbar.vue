@@ -24,6 +24,7 @@ const title = config.title
 const visible = ref(true)
 const navRef = ref<HTMLElement | null>(null)
 let hideTimeout: ReturnType<typeof setTimeout> | null = null
+let lastMove = 0
 
 function show() {
   visible.value = true
@@ -36,6 +37,9 @@ function scheduleHide() {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('mousemove', (e) => {
+    const now = Date.now()
+    if (now - lastMove < 50) return
+    lastMove = now
     if (e.clientY < 60) show()
     else scheduleHide()
   })

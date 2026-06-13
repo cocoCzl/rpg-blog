@@ -17,33 +17,28 @@
 
 <script setup lang="ts">
 import questsData from '../../../data/rpg/quests'
-import { ref, onMounted } from 'vue'
+import type { RpgQuestState } from '../../lib/rpg-state-types'
 
-const questStates = ref<Record<string, string>>({})
+const props = defineProps<{
+  questStates: RpgQuestState[]
+}>()
 
-onMounted(async () => {
-  try {
-    const resp = await fetch('/api/rpg')
-    const data = await resp.json()
-    const map: Record<string, string> = {}
-    for (const q of (data.quests || [])) {
-      map[q.quest_key] = q.status
-    }
-    questStates.value = map
-  } catch {}
-})
+const stateMap: Record<string, string> = {}
+for (const q of (props.questStates ?? [])) {
+  stateMap[q.quest_key] = q.status
+}
 
 const quests = questsData
 
 function questStatusText(key: string) {
-  const status = questStates.value[key]
+  const status = stateMap[key]
   if (status === 'completed') return 'Done'
   if (status === 'active') return 'Active'
   return 'Locked'
 }
 
 function questStatusStyle(key: string) {
-  const status = questStates.value[key]
+  const status = stateMap[key]
   if (status === 'completed') return 'background: #10B981; color: white'
   if (status === 'active') return 'background: var(--color-primary); color: var(--color-bg)'
   return 'background: var(--color-surface); color: var(--color-text-secondary)'

@@ -46,11 +46,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     db.prepare('INSERT OR REPLACE INTO character_titles (title_key, unlocked, unlocked_at) VALUES (?, 1, datetime(\'now\'))').run(key)
   } else if (action === 'add_experience') {
     const amount = body.amount || 10
-    const current = db.prepare('SELECT experience, level FROM character_state WHERE id = 1').get() as any
-    const exp = (current?.experience || 0) + amount
-    let lvl = current?.level || 1
-    while (exp >= lvl * lvl * 100) lvl++
-    db.prepare('INSERT OR REPLACE INTO character_state (id, experience, level, current_title, hp, max_hp, mp, max_mp, atk, def, spd, luk, updated_at) VALUES (1, ?, ?, COALESCE((SELECT current_title FROM character_state WHERE id = 1), \'\'), COALESCE((SELECT hp FROM character_state WHERE id = 1), 100), COALESCE((SELECT max_hp FROM character_state WHERE id = 1), 100), COALESCE((SELECT mp FROM character_state WHERE id = 1), 50), COALESCE((SELECT max_mp FROM character_state WHERE id = 1), 50), COALESCE((SELECT atk FROM character_state WHERE id = 1), 10), COALESCE((SELECT def FROM character_state WHERE id = 1), 5), COALESCE((SELECT spd FROM character_state WHERE id = 1), 8), COALESCE((SELECT luk FROM character_state WHERE id = 1), 3), datetime(\'now\'))').run(exp, lvl)
+    const upsert = db.transaction(() => {
+      const current = db.prepare('SELECT id, experience, level, current_title, hp, max_hp, mp, max_mp, atk, def, spd, luk FROM character_state WHERE id = 1').get() as any
+      if (!current) {
+        db.prepare('INSERT INTO character_state (id, experience, level, hp, max_hp, mp, max_mp, atk, def, spd, luk, updated_at) VALUES (1, ?, 1, 100, 100, 50, 50, 10, 5, 8, 3, datetime(\'now\'))').run(amount)
+        return
+      }
+      const exp = current.experience + amount
+      let lvl = current.level
+      while (exp >= lvl * lvl * 100) lvl++
+      db.prepare('UPDATE character_state SET experience = ?, level = ?, updated_at = datetime(\'now\') WHERE id = 1').run(exp, lvl)
+    })
+    upsert()
   } else if (action === 'add_status_effect') {
     db.prepare('INSERT OR REPLACE INTO character_status_effects (effect_key, is_active, acquired_at) VALUES (?, 1, datetime(\'now\'))').run(key)
   } else {

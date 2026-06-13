@@ -7,8 +7,8 @@
           <p class="text-sm font-medium" style="color: var(--color-text)">{{ skill.name }}</p>
           <p class="text-xs" style="color: var(--color-text-secondary)">{{ skill.description }}</p>
         </div>
-        <span class="text-xs px-2 py-0.5 rounded-full" :style="unlocked(skill.key) ? 'background: var(--color-primary); color: var(--color-bg)' : 'background: var(--color-surface); color: var(--color-text-secondary)'">
-          {{ unlocked(skill.key) ? 'Lv.' + skill.level : 'Locked' }}
+        <span class="text-xs px-2 py-0.5 rounded-full" :style="isUnlocked(skill.key) ? 'background: var(--color-primary); color: var(--color-bg)' : 'background: var(--color-surface); color: var(--color-text-secondary)'">
+          {{ isUnlocked(skill.key) ? 'Lv.' + skill.level : 'Locked' }}
         </span>
       </div>
     </div>
@@ -17,21 +17,16 @@
 
 <script setup lang="ts">
 import skillsData from '../../../data/rpg/skills'
-import { ref, onMounted } from 'vue'
+import type { RpgSkillState } from '../../lib/rpg-state-types'
 
-const unlockedSkills = ref<string[]>([])
+const props = defineProps<{
+  unlockedSkills: RpgSkillState[]
+}>()
 
-onMounted(async () => {
-  try {
-    const resp = await fetch('/api/rpg')
-    const data = await resp.json()
-    unlockedSkills.value = (data.skills || []).filter((s: any) => s.unlocked).map((s: any) => s.skill_key)
-  } catch {}
-})
-
+const unlockedSet = new Set((props.unlockedSkills ?? []).filter((s) => s.unlocked).map((s) => s.skill_key))
 const skills = skillsData
 
-function unlocked(key: string) {
-  return unlockedSkills.value.includes(key)
+function isUnlocked(key: string) {
+  return unlockedSet.has(key)
 }
 </script>
