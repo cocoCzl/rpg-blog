@@ -81,12 +81,7 @@ onMounted(async () => {
   comments.value = await commentsResp.json()
   const meData = await meResp.json()
   if (meData.type === 'github') {
-    // fetch full user data from cookie
-    try {
-      githubUser.value = JSON.parse(decodeURIComponent(document.cookie.split('; ')
-        .find(row => row.startsWith('github_user='))
-        ?.split('=')[1] || ''))
-    } catch {}
+    githubUser.value = { login: meData.username, avatar_url: meData.avatar, id: 0 } as GithubUser
   }
 })
 

@@ -23,7 +23,7 @@ export const GET: APIRoute = async ({ cookies }) => {
     const session = verifySessionToken(githubSessionCookie.value)
     if (session) {
       try {
-        const user = JSON.parse(decodeURIComponent(githubCookie.value))
+        const user = JSON.parse(githubCookie.value)
         return new Response(JSON.stringify({
           type: 'github',
           username: user.login,

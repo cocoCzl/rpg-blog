@@ -1,7 +1,12 @@
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'crypto'
 import { getDb } from './db'
 
-const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-me'
+const SESSION_SECRET = (() => {
+  const secret = process.env.SESSION_SECRET
+  if (secret) return secret
+  console.warn('WARNING: SESSION_SECRET not set. Using insecure default. Set SESSION_SECRET in .env for production.')
+  return 'dev-secret-change-me'
+})()
 
 export interface Session {
   username: string
@@ -38,11 +43,17 @@ export function verifySessionToken(token: string): Session | null {
     const expectedSig = createHash('sha256')
       .update(encoded + SESSION_SECRET)
       .digest('hex')
-    if (sig !== expectedSig) return null
+    if (sig.length !== expectedSig.length || !timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) return null
     return JSON.parse(Buffer.from(encoded, 'base64url').toString())
   } catch {
     return null
   }
+}
+
+export function requireAdmin(cookies: { get: (name: string) => { value: string } | undefined }) {
+  const sessionCookie = cookies.get('session')
+  if (!sessionCookie) return false
+  return Boolean(verifySessionToken(sessionCookie.value))
 }
 
 export function ensureAdminExists() {

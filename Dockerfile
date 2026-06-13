@@ -8,6 +8,8 @@ RUN npm run build
 FROM node:22-alpine
 WORKDIR /app
 
+RUN apk add --no-cache wget
+
 RUN addgroup -S app && adduser -S app -G app
 
 COPY --from=builder /app/dist ./dist

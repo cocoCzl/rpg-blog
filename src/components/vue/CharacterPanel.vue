@@ -16,8 +16,7 @@
         <span>{{ experience }} / {{ nextLevelExp }}</span>
       </div>
       <div class="w-full h-2 rounded-full overflow-hidden" style="background: var(--color-crystal-glass, rgba(255,255,255,0.08))">
-        <div class="h-full rounded-full transition-all duration-300" style="background: var(--color-primary); width: `${expPercent}%`">
-        </div>
+        <div class="h-full rounded-full transition-all duration-300" :style="{ background: 'var(--color-primary)', width: expPercent + '%' }"></div>
       </div>
     </div>
 

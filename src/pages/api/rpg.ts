@@ -1,12 +1,6 @@
 import type { APIRoute } from 'astro'
 import { getDb } from '../../lib/db'
-import { verifySessionToken } from '../../lib/auth'
-
-function requireAdmin(cookies: any) {
-  const sessionCookie = cookies.get('session')
-  if (!sessionCookie) return false
-  return Boolean(verifySessionToken(sessionCookie.value))
-}
+import { requireAdmin } from '../../lib/auth'
 
 export const GET: APIRoute = async () => {
   const db = getDb()

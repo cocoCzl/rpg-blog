@@ -1,4 +1,5 @@
-import { verifySessionToken } from '../../lib/auth'
+import type { APIRoute } from 'astro'
+import { requireAdmin as checkAdmin } from '../../lib/auth'
 import { writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { randomBytes } from 'crypto'
@@ -10,14 +11,12 @@ function ext(name: string): string {
   return idx >= 0 ? name.substring(idx) : ''
 }
 
-export async function POST({ request, cookies }: any) {
-  const sessionCookie = cookies.get('session')
-  if (!sessionCookie) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
-  }
-  const session = verifySessionToken(sessionCookie.value)
-  if (!session) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
+export const POST: APIRoute = async ({ request, cookies }) => {
+  if (!checkAdmin(cookies)) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 
   const formData = await request.formData()
