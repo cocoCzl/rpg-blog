@@ -1,0 +1,41 @@
+{
+  "nav": {
+    "home": "首页",
+    "about": "关于"
+  },
+  "blog": {
+    "title": "RPG 博客",
+    "description": "一个带有 RPG 游戏化元素的个人博客",
+    "no_articles": "暂无文章",
+    "back_home": "返回首页"
+  },
+  "comment": {
+    "title": "评论",
+    "placeholder": "写下你的评论...",
+    "login": "使用 GitHub 登录",
+    "post": "发布",
+    "posting": "发布中...",
+    "no_comments": "还没有评论，来做第一个吧！",
+    "commenting_as": "评论身份"
+  },
+  "rpg": {
+    "character": "角色",
+    "level": "等级",
+    "skills": "技能",
+    "equipment": "装备",
+    "quests": "任务"
+  },
+  "admin": {
+    "login": "管理员登录",
+    "username": "用户名",
+    "password": "密码",
+    "dashboard": "管理后台",
+    "logout": "退出登录",
+    "comments": "评论管理",
+    "moderation": "评论审核",
+    "approve": "通过",
+    "reject": "驳回",
+    "pending": "待审核",
+    "approved": "已通过"
+  }
+}

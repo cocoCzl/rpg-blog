@@ -1,0 +1,65 @@
+---
+import '../styles/global.css'
+import config from '../../site.config'
+import { themePresets } from '../lib/theme'
+import { isConfigured } from '../lib/github-oauth'
+import GithubLoginButton from '../components/vue/GithubLoginButton.vue'
+
+const preset = themePresets[config.theme.preset]
+const c = preset.colors
+
+const cssVars = `
+  --color-primary: ${c.primary};
+  --color-secondary: ${c.secondary};
+  --color-accent: ${c.accent};
+  --color-bg: ${c.background};
+  --color-surface: ${c.surface};
+  --color-text: ${c.text};
+  --color-text-secondary: ${c.textSecondary};
+  --font-heading: ${preset.fontFamily.heading};
+  --font-body: ${preset.fontFamily.body};
+  --font-mono: ${preset.fontFamily.mono};
+  --font-scale: ${preset.fontScale};
+`
+
+export interface Props {
+  title?: string
+  description?: string
+}
+
+const pageTitle = Astro.props.title
+  ? `${Astro.props.title} - ${config.title}`
+  : config.title
+const pageDesc = Astro.props.description || config.description
+---
+
+<!doctype html>
+<html lang={config.locale} class={preset.mode}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={pageDesc} />
+    <title>{pageTitle}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style is:inline set:html={cssVars} />
+  </head>
+  <body style={`font-family: var(--font-body); background-color: var(--color-bg); color: var(--color-text);`}>
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-card border-t-0 border-x-0 rounded-none" style="--tw-border-opacity: 0">
+      <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+        <a href="/" class="font-bold text-lg" style="font-family: var(--font-heading)">
+          {config.title}
+        </a>
+        <div class="flex items-center gap-4">
+          {
+            isConfigured() ? (
+              <GithubLoginButton client:load />
+            ) : null
+          }
+        </div>
+      </div>
+    </nav>
+    <div class="pt-14">
+      <slot />
+    </div>
+  </body>
+</html>

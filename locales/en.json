@@ -1,0 +1,41 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About"
+  },
+  "blog": {
+    "title": "RPG Blog",
+    "description": "A personal blog with RPG-style gamification",
+    "no_articles": "No articles yet.",
+    "back_home": "Back to home"
+  },
+  "comment": {
+    "title": "Comments",
+    "placeholder": "Write a comment...",
+    "login": "Login with GitHub",
+    "post": "Post",
+    "posting": "Posting...",
+    "no_comments": "No comments yet. Be the first!",
+    "commenting_as": "Commenting as"
+  },
+  "rpg": {
+    "character": "Character",
+    "level": "Lv.",
+    "skills": "Skills",
+    "equipment": "Equipment",
+    "quests": "Quests"
+  },
+  "admin": {
+    "login": "Admin Login",
+    "username": "Username",
+    "password": "Password",
+    "dashboard": "Admin Dashboard",
+    "logout": "Logout",
+    "comments": "Comments",
+    "moderation": "Comment Moderation",
+    "approve": "Approve",
+    "reject": "Reject",
+    "pending": "Pending",
+    "approved": "Approved"
+  }
+}

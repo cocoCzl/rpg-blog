@@ -1,0 +1,40 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import config from '../../site.config'
+import ArticleCardList from '../components/vue/ArticleCardList.vue'
+
+const allPosts = await getCollection('posts', ({ data }) => {
+  return import.meta.env.PROD ? true : true
+})
+
+const sortedPosts = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+
+const pageSize = config.postsPerPage
+const totalPages = Math.ceil(sortedPosts.length / pageSize)
+const currentPage = 1
+const pageArticles = sortedPosts.slice(0, pageSize)
+---
+
+<BaseLayout>
+  <main class="min-h-screen" style="background: linear-gradient(to bottom right, var(--color-bg), color-mix(in srgb, var(--color-bg) 80%, var(--color-primary) 20%))">
+    <div class="max-w-3xl mx-auto px-4 py-16">
+      <header class="text-center mb-12 space-y-4 animate-fade-in">
+        <h1 class="text-4xl md:text-5xl font-bold" style="font-family: var(--font-heading)">
+          {config.title}
+        </h1>
+        <p class="text-lg" style="color: var(--color-text-secondary)">
+          {config.description}
+        </p>
+      </header>
+
+      <ArticleCardList
+        articles={pageArticles}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        basePath="/page/"
+        client:load
+      />
+    </div>
+  </main>
+</BaseLayout>

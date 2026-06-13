@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import SkillTree from '../components/vue/SkillTree.vue'
+import EquipmentGrid from '../components/vue/EquipmentGrid.vue'
+import QuestLog from '../components/vue/QuestLog.vue'
+---
+
+<BaseLayout title="RPG Dashboard">
+  <main class="min-h-screen" style="background: linear-gradient(to bottom right, var(--color-bg), var(--color-surface))">
+    <div class="max-w-4xl mx-auto px-4 py-16 space-y-6">
+      <h1 class="text-2xl font-bold" style="font-family: var(--font-heading)">RPG Dashboard</h1>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SkillTree client:load />
+        <EquipmentGrid client:load />
+      </div>
+      <QuestLog client:load />
+    </div>
+  </main>
+</BaseLayout>

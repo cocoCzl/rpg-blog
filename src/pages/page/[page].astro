@@ -1,0 +1,45 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import config from '../../../site.config'
+import ArticleCardList from '../../components/vue/ArticleCardList.vue'
+
+export const prerender = true
+
+export async function getStaticPaths() {
+  const allPosts = await getCollection('posts')
+  const sortedPosts = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  const pageSize = config.postsPerPage
+  const totalPages = Math.ceil(sortedPosts.length / pageSize)
+  return Array.from({ length: totalPages }, (_, i) => ({
+    params: { page: String(i + 1) },
+  }))
+}
+
+const allPosts = await getCollection('posts')
+const sortedPosts = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+
+const { page } = Astro.params
+const currentPage = Number(page)
+const pageSize = config.postsPerPage
+const start = (currentPage - 1) * pageSize
+const pageArticles = sortedPosts.slice(start, start + pageSize)
+const totalPages = Math.ceil(sortedPosts.length / pageSize)
+---
+
+<BaseLayout title={`Page ${currentPage}`}>
+  <main class="min-h-screen" style="background: linear-gradient(to bottom right, var(--color-bg), var(--color-surface))">
+    <div class="max-w-3xl mx-auto px-4 py-16">
+      <h1 class="text-3xl font-bold mb-8 text-center" style="font-family: var(--font-heading)">
+        {config.title}
+      </h1>
+      <ArticleCardList
+        articles={pageArticles}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        basePath="/page/"
+        client:load
+      />
+    </div>
+  </main>
+</BaseLayout>

@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+.astro/
+
+# Build output
+dist/
+
+# SQLite database
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# Uploads (user content, not part of template)
+public/uploads/*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+---
+
+<BaseLayout title="Admin Dashboard">
+  <main class="min-h-screen" style="background: linear-gradient(to bottom right, var(--color-bg), var(--color-surface))">
+    <div class="max-w-3xl mx-auto px-4 py-16">
+      <div class="glass-card p-8 space-y-6">
+        <h1 class="text-2xl font-bold" style="font-family: var(--font-heading); color: var(--color-text)">
+          Admin Dashboard
+        </h1>
+        <p style="color: var(--color-text-secondary)">
+          Welcome back. Use the navigation below to manage your blog.
+        </p>
+        <div class="flex gap-4">
+          <a href="/admin/comments" class="px-4 py-2 rounded-lg text-sm font-medium"
+             style="background: var(--color-primary); color: var(--color-bg)">
+            Comments
+          </a>
+          <button class="px-4 py-2 rounded-lg text-sm font-medium"
+                  style="background: var(--color-surface); color: var(--color-text)"
+                  id="logout-btn">
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</BaseLayout>
+
+<script>
+  document.getElementById('logout-btn')?.addEventListener('click', async () => {
+    await fetch('/api/auth/logout')
+    window.location.href = '/'
+  })
+</script>

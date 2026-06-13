@@ -1,0 +1,35 @@
+{
+  "name": "rpg-blog",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "A personal blog template with RPG gamification, built on Astro + Vue 3 + SQLite",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.5.5",
+    "@astrojs/tailwind": "^6.0.2",
+    "@astrojs/vue": "^5.0.13",
+    "astro": "^5.7.10",
+    "better-sqlite3": "^11.9.1",
+    "highlight.js": "^11.11.1",
+    "lucide-vue-next": "^1.0.0",
+    "marked": "^18.0.3",
+    "motion": "^11.18.0",
+    "pinia": "^2.3.0",
+    "satori": "^0.26.0",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^3.4.17",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@vue/test-utils": "^2.4.10",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.8"
+  }
+}

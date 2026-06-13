@@ -1,0 +1,24 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rpg-blog
+    env_file:
+      - .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 4321
+      NODE_ENV: production
+      SQLITE_PATH: /app/data/rpg-blog.db
+      UPLOAD_PATH: /app/public/uploads
+    ports:
+      - "4321:4321"
+    volumes:
+      - sqlite_data:/app/data
+      - upload_data:/app/public/uploads
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:
+  upload_data:
