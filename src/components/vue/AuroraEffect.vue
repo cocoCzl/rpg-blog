@@ -32,6 +32,7 @@ function createWaves(w: number, h: number, ctx: CanvasRenderingContext2D): Wave[
 }
 
 function animate(c: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+  if (document.hidden) return
   ctx.clearRect(0, 0, c.width, c.height); frameCount++
   for (const w of waves.value) {
     ctx.beginPath(); ctx.moveTo(0, c.height)
@@ -56,11 +57,30 @@ function resize() {
 onMounted(() => {
   if (reducedMotion.value) return
   resize(); window.addEventListener('resize', resize)
+  document.addEventListener('visibilitychange', onVisibilityChange)
   animate(canvasRef.value!, canvasRef.value!.getContext('2d')!)
+  animationId = requestAnimationFrame(loop)
 })
 
+function loop() {
+  if (document.hidden) {
+    animationId = requestAnimationFrame(loop)
+    return
+  }
+  animate(canvasRef.value!, canvasRef.value!.getContext('2d')!)
+  animationId = requestAnimationFrame(loop)
+}
+
+function onVisibilityChange() {
+  if (!document.hidden && !animationId) {
+    animationId = requestAnimationFrame(loop)
+  }
+}
+
 onUnmounted(() => {
-  if (animationId) cancelAnimationFrame(animationId); window.removeEventListener('resize', resize)
+  if (animationId) cancelAnimationFrame(animationId)
+  window.removeEventListener('resize', resize)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 </script>
 

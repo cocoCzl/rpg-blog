@@ -5,9 +5,10 @@
     <nav v-if="totalPages > 1" class="flex justify-center items-center gap-2 pt-4">
       <a
         v-if="currentPage > 1"
-        :href="`${basePath}${currentPage - 1 === 1 ? '/' : '/' + (currentPage - 1)}`"
+        :href="currentPage === 2 ? '/' : `${basePath}${currentPage - 1}`"
         class="px-3 py-1.5 rounded-lg text-sm"
         style="background: var(--color-surface); color: var(--color-text)"
+        aria-label="Previous page"
       >
         &larr; Prev
       </a>
@@ -19,6 +20,7 @@
         :href="`${basePath}${currentPage + 1}`"
         class="px-3 py-1.5 rounded-lg text-sm"
         style="background: var(--color-surface); color: var(--color-text)"
+        aria-label="Next page"
       >
         Next &rarr;
       </a>

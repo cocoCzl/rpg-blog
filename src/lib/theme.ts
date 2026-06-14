@@ -38,6 +38,7 @@ export interface ThemeConfig {
 }
 
 export interface SiteConfig {
+  siteUrl: string
   title: string
   description: string
   author: AuthorConfig

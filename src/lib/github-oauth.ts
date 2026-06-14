@@ -3,19 +3,45 @@ import { randomBytes } from 'crypto'
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || ''
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || ''
 
+// NOTE: stateStore is an in-memory Map. If running multiple server instances
+// behind a load balancer (e.g. Kubernetes, Docker Swarm), the OAuth state
+// stored by one instance will not be available to the callback handler on
+// another instance. For production multi-instance deployments, replace this
+// with a shared store (Redis, database table with TTL, or sticky sessions).
 const stateStore = new Map<string, { redirectTo: string; createdAt: number }>()
+
+// Limit state store to prevent memory exhaustion
+const MAX_STATES = 10000
+
+// Periodic cleanup every 5 minutes
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now()
+    for (const [key, val] of stateStore) {
+      if (now - val.createdAt > 5 * 60 * 1000) stateStore.delete(key)
+    }
+  }, 5 * 60 * 1000)
+}
 
 function generateState(): string {
   return randomBytes(16).toString('hex')
 }
 
+function isValidRedirect(target: string): boolean {
+  // Only allow relative paths (starting with /) to prevent open redirect attacks
+  return /^\/[^/]/.test(target) && !target.includes('\n') && !target.includes('\r')
+}
+
 function storeState(redirectTo: string): string {
+  if (!isValidRedirect(redirectTo)) redirectTo = '/'
   const state = generateState()
   stateStore.set(state, { redirectTo, createdAt: Date.now() })
-  // Cleanup expired states (5 minutes)
-  const now = Date.now()
-  for (const [key, val] of stateStore) {
-    if (now - val.createdAt > 5 * 60 * 1000) stateStore.delete(key)
+  // If too many entries, remove oldest
+  if (stateStore.size > MAX_STATES) {
+    const entries = Array.from(stateStore.entries()).sort((a, b) => a[1].createdAt - b[1].createdAt)
+    for (let i = 0; i < entries.length - MAX_STATES; i++) {
+      stateStore.delete(entries[i][0])
+    }
   }
   return state
 }

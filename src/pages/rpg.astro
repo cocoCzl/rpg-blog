@@ -8,24 +8,25 @@ import StatusEffectList from '../components/vue/StatusEffectList.vue'
 import AttributeBar from '../components/vue/AttributeBar.vue'
 import { getDb } from '../lib/db'
 import type { StatusEffect } from '../lib/rpg-types'
-import type { RpgSkillState, RpgEquipmentState, RpgQuestState } from '../lib/rpg-state-types'
+import type { RpgSkillState, RpgEquipmentState, RpgQuestState, RpgState, RpgStatusEffectState } from '../lib/rpg-state-types'
+import { DEFAULT_RPG_STATE } from '../lib/rpg-state-types'
 import { ATTRIBUTE_LABELS } from '../lib/rpg-types'
 import statusEffectsData from '../../data/rpg/status-effects'
 
 const db = getDb()
-const state = db.prepare('SELECT experience, level, current_title, hp, max_hp, mp, max_mp, atk, def, spd, luk FROM character_state LIMIT 1').get() as any
+const state = db.prepare('SELECT experience, level, current_title, hp, max_hp, mp, max_mp, atk, def, spd, luk FROM character_state LIMIT 1').get() as RpgState | undefined
 const skills = db.prepare('SELECT skill_key, unlocked FROM character_skills').all() as RpgSkillState[]
 const equipment = db.prepare('SELECT equipment_key, equipped FROM character_equipment').all() as RpgEquipmentState[]
 const quests = db.prepare('SELECT quest_key, status, progress FROM character_quests').all() as RpgQuestState[]
-const dbStatusEffects = db.prepare('SELECT effect_key, is_active FROM character_status_effects').all() as { effect_key: string; is_active: number }[]
+const dbStatusEffects = db.prepare('SELECT effect_key, is_active FROM character_status_effects').all() as RpgStatusEffectState[]
 
-const activeEffectKeys = new Set(dbStatusEffects.filter((e: any) => e.is_active).map((e: any) => e.effect_key))
+const activeEffectKeys = new Set(dbStatusEffects.filter((e) => e.is_active).map((e) => e.effect_key))
 const statusEffects: StatusEffect[] = statusEffectsData.map((e) => ({
   ...e,
   isActive: activeEffectKeys.has(e.key),
 }))
 
-const rpgState = state || { experience: 0, level: 1, current_title: '', hp: 100, max_hp: 100, mp: 50, max_mp: 50, atk: 10, def: 5, spd: 8, luk: 3 }
+const rpgState = state || DEFAULT_RPG_STATE
 const attrs = [
   { key: 'hp', value: rpgState.hp, max: rpgState.max_hp },
   { key: 'mp', value: rpgState.mp, max: rpgState.max_mp },

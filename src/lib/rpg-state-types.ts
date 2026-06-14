@@ -14,6 +14,20 @@ export interface RpgState {
   luk: number
 }
 
+export const DEFAULT_RPG_STATE: RpgState = {
+  experience: 0,
+  level: 1,
+  current_title: '',
+  hp: 100,
+  max_hp: 100,
+  mp: 50,
+  max_mp: 50,
+  atk: 10,
+  def: 5,
+  spd: 8,
+  luk: 3,
+}
+
 export interface RpgSkillState {
   skill_key: string
   unlocked: number

@@ -1,6 +1,7 @@
 import type { SiteConfig } from './src/lib/theme'
 
 const config: SiteConfig = {
+  siteUrl: process.env.SITE_URL || 'http://localhost:4321',
   title: 'RPG Blog',
   description: 'A personal blog with RPG-style gamification',
   author: {

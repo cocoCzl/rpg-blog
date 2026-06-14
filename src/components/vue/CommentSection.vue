@@ -9,12 +9,15 @@
         v-model="newComment"
         placeholder="Write a comment..."
         rows="3"
+        maxlength="5000"
         class="w-full px-3 py-2 rounded-lg text-sm resize-none"
         style="background: var(--color-crystal-glass, rgba(255,255,255,0.08)); border: 1px solid var(--color-crystal-border, rgba(255,255,255,0.1)); color: var(--color-text)"
+        aria-label="Write a comment"
+        aria-describedby="comment-status"
       />
       <div class="flex justify-between items-center">
-        <span class="text-xs" style="color: var(--color-text-secondary)">
-          Commenting as {{ githubUser.login }}
+        <span class="text-xs" style="color: var(--color-text-secondary)" id="comment-status">
+          Commenting as {{ githubUser.login }} · {{ 5000 - newComment.length }} chars remaining
         </span>
         <button
           @click="submitComment"
@@ -40,7 +43,7 @@
 
     <div v-for="comment in comments" :key="comment.id" class="glass-card p-4 space-y-2">
       <div class="flex items-center gap-2">
-        <img v-if="comment.author_avatar" :src="comment.author_avatar" alt="" class="w-6 h-6 rounded-full" />
+        <img v-if="comment.author_avatar" :src="comment.author_avatar" :alt="`${comment.author_name}'s avatar`" class="w-6 h-6 rounded-full" />
         <span class="text-sm font-medium" style="color: var(--color-text)">{{ comment.author_name }}</span>
         <span class="text-xs" style="color: var(--color-text-secondary)">{{ formatDate(comment.created_at) }}</span>
       </div>
@@ -51,16 +54,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import type { CommentDisplay } from '../../lib/types'
 
 const props = defineProps<{ articleSlug: string }>()
-
-interface Comment {
-  id: number
-  author_name: string
-  author_avatar: string
-  body: string
-  created_at: string
-}
 
 interface GithubUser {
   login: string
@@ -68,7 +64,7 @@ interface GithubUser {
   id: number
 }
 
-const comments = ref<Comment[]>([])
+const comments = ref<CommentDisplay[]>([])
 const totalPages = ref(1)
 const currentPage = ref(1)
 const githubUser = ref<GithubUser | null>(null)
@@ -81,16 +77,13 @@ onMounted(async () => {
     fetch('/api/auth/me'),
   ])
   const data = await commentsResp.json()
-  if (Array.isArray(data)) {
-    comments.value = data
-  } else {
-    comments.value = data.comments || []
-    totalPages.value = data.totalPages || 1
-    currentPage.value = data.page || 1
-  }
+  comments.value = data.comments || []
+  totalPages.value = data.totalPages || 1
+  currentPage.value = data.page || 1
+
   const meData = await meResp.json()
   if (meData.type === 'github') {
-    githubUser.value = { login: meData.username, avatar_url: meData.avatar, id: 0 } as GithubUser
+    githubUser.value = { login: meData.username, avatar_url: meData.avatar, id: meData.id ?? 0 } as GithubUser
   }
 })
 
@@ -111,7 +104,7 @@ async function submitComment() {
       newComment.value = ''
       if (githubUser.value) {
         comments.value.unshift({
-          id: Date.now(),
+          id: -Date.now(),
           author_name: githubUser.value.login,
           author_avatar: githubUser.value.avatar_url,
           body: newCommentBody,

@@ -32,9 +32,9 @@ const quests = questsData
 
 function questStatusText(key: string) {
   const status = stateMap[key]
-  if (status === 'completed') return 'Done'
-  if (status === 'active') return 'Active'
-  return 'Locked'
+  if (status === 'completed') return '✓ Done'
+  if (status === 'active') return '▶ Active'
+  return '🔒 Locked'
 }
 
 function questStatusStyle(key: string) {

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-interface UserState {
+export interface UserState {
   type: 'anonymous' | 'github' | 'admin'
   username?: string
   avatar?: string
@@ -33,7 +33,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    await fetch('/api/auth/logout')
+    await fetch('/api/auth/logout', { method: 'POST' })
     user.value = { type: 'anonymous' }
   }
 

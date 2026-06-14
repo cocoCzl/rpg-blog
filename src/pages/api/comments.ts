@@ -1,8 +1,13 @@
 import type { APIRoute } from 'astro'
 import { getDb } from '../../lib/db'
-import { verifySessionToken } from '../../lib/auth'
+import { verifySessionToken, verifyPayload } from '../../lib/auth'
 
 const JSON_HEADER = { 'Content-Type': 'application/json' }
+
+const CACHE_HEADER = {
+  'Content-Type': 'application/json',
+  'Cache-Control': 'public, max-age=30, s-maxage=60',
+}
 
 export const GET: APIRoute = async ({ url }) => {
   const articleSlug = url.searchParams.get('article_slug')
@@ -31,7 +36,11 @@ export const GET: APIRoute = async ({ url }) => {
     page,
     limit,
     totalPages: Math.ceil((total?.count || 0) / limit),
-  }), { headers: JSON_HEADER })
+  }), { headers: CACHE_HEADER })
+}
+
+function stripHtml(s: string): string {
+  return s.replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
@@ -51,7 +60,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     })
   }
 
-  const body = await request.json()
+  let body: { article_slug?: string; body?: string }
+  try {
+    body = await request.json()
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
+      status: 400,
+      headers: JSON_HEADER,
+    })
+  }
   const { article_slug, body: commentBody } = body || {}
   if (!article_slug || !commentBody) {
     return new Response(JSON.stringify({ error: 'article_slug and body are required' }), {
@@ -67,11 +84,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   try {
-    const user = JSON.parse(githubCookie.value)
+    const user = verifyPayload<{ login: string; avatar_url: string; id: string | number }>(githubCookie.value)
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Invalid user data' }), {
+        status: 400,
+        headers: JSON_HEADER,
+      })
+    }
     const db = getDb()
     db.prepare(
       'INSERT INTO comments (article_slug, author_name, author_avatar, author_github_id, body) VALUES (?, ?, ?, ?, ?)'
-    ).run(article_slug, user.login, user.avatar_url, String(user.id), commentBody.trim())
+    ).run(article_slug, user.login, user.avatar_url, String(user.id), stripHtml(commentBody.trim()))
 
     return new Response(JSON.stringify({ success: true }), {
       status: 201,

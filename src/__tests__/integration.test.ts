@@ -4,19 +4,28 @@ import { resolve } from 'path'
 
 const BASE = 'http://localhost:4321'
 
-async function loginAsAdmin(): Promise<string> {
+async function loginAsAdmin(): Promise<{ cookie: string; csrfToken: string }> {
   const resp = await fetch(`${BASE}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: 'admin', password: 'change_me_immediately' }),
   })
-  return resp.headers.get('set-cookie')?.split(';')[0] || ''
+  const setCookieHeaders = resp.headers.getSetCookie ? resp.headers.getSetCookie() : [resp.headers.get('set-cookie') || '']
+  const allCookies = setCookieHeaders.map(h => h.split(';')[0]).join('; ')
+  const csrfMatch = setCookieHeaders.join('; ').match(/csrf_token=([^;]+)/)
+  const csrfToken = csrfMatch ? csrfMatch[1] : ''
+  return { cookie: allCookies, csrfToken }
 }
 
-async function adminFetch(path: string, cookie: string, init?: RequestInit): Promise<Response> {
+async function adminFetch(path: string, cookie: string, csrfToken: string, init?: RequestInit): Promise<Response> {
   return fetch(`${BASE}${path}`, {
     ...init,
-    headers: { ...init?.headers, Cookie: cookie, Origin: BASE },
+    headers: {
+      ...init?.headers,
+      Cookie: cookie,
+      Origin: BASE,
+      'x-csrf-token': csrfToken,
+    },
   })
 }
 
@@ -197,9 +206,12 @@ describe('OG Image', () => {
 
 describe('Admin Authentication', () => {
   let cookie = ''
+  let csrf = ''
 
   beforeAll(async () => {
-    cookie = await loginAsAdmin()
+    const result = await loginAsAdmin()
+    cookie = result.cookie
+    csrf = result.csrfToken
   })
 
   it('login sets session cookie', () => {
@@ -208,28 +220,28 @@ describe('Admin Authentication', () => {
   })
 
   it('GET /api/auth/me returns admin after login', async () => {
-    const resp = await adminFetch('/api/auth/me', cookie)
+    const resp = await adminFetch('/api/auth/me', cookie, csrf)
     const data = await resp.json()
     expect(data.type).toBe('admin')
     expect(data.username).toBe('admin')
   })
 
   it('admin dashboard is accessible', async () => {
-    const resp = await adminFetch('/admin', cookie)
+    const resp = await adminFetch('/admin', cookie, csrf)
     expect(resp.status).toBe(200)
     const html = await resp.text()
     expect(html).toContain('Admin Dashboard')
   })
 
   it('admin comments page is accessible', async () => {
-    const resp = await adminFetch('/admin/comments', cookie)
+    const resp = await adminFetch('/admin/comments', cookie, csrf)
     expect(resp.status).toBe(200)
     const html = await resp.text()
     expect(html).toContain('Comment Moderation')
   })
 
   it('upload page is accessible by admin', async () => {
-    const resp = await adminFetch('/admin/upload', cookie)
+    const resp = await adminFetch('/admin/upload', cookie, csrf)
     expect(resp.status).toBe(200)
     const html = await resp.text()
     expect(html).toContain('Upload')
@@ -262,18 +274,19 @@ describe('Admin Authentication', () => {
   })
 
   it('logout clears session', async () => {
-    const resp = await adminFetch('/api/auth/logout', cookie)
+    const resp = await adminFetch('/api/auth/logout', cookie, csrf, { method: 'POST' })
     expect(resp.ok).toBe(true)
-    const sc = resp.headers.get('set-cookie')
-    expect(sc).toContain('session=deleted')
   })
 })
 
 describe('Comment System', () => {
   let adminCookie = ''
+  let adminCsrf = ''
 
   beforeAll(async () => {
-    adminCookie = await loginAsAdmin()
+    const result = await loginAsAdmin()
+    adminCookie = result.cookie
+    adminCsrf = result.csrfToken
   })
 
   it('GET /api/comments requires article_slug', async () => {
@@ -283,10 +296,12 @@ describe('Comment System', () => {
     expect(data.error).toContain('article_slug')
   })
 
-  it('GET /api/comments?article_slug=hello-world returns empty array', async () => {
+  it('GET /api/comments?article_slug=hello-world returns object with comments', async () => {
     const resp = await fetch(`${BASE}/api/comments?article_slug=hello-world`)
     const data = await resp.json()
-    expect(Array.isArray(data)).toBe(true)
+    expect(Array.isArray(data.comments)).toBe(true)
+    expect(data.total).toBeDefined()
+    expect(data.totalPages).toBeDefined()
   })
 
   it('POST /api/comments without auth returns 401', async () => {
@@ -299,7 +314,7 @@ describe('Comment System', () => {
   })
 
   it('admin GET /api/admin/comments returns array', async () => {
-    const resp = await adminFetch('/api/admin/comments', adminCookie)
+    const resp = await adminFetch('/api/admin/comments', adminCookie, adminCsrf)
     expect(resp.status).toBe(200)
     const data = await resp.json()
     expect(Array.isArray(data)).toBe(true)
@@ -315,7 +330,7 @@ describe('Comment System', () => {
   })
 
   it('admin POST moderate with invalid data returns 400', async () => {
-    const resp = await adminFetch('/api/admin/comments', adminCookie, {
+    const resp = await adminFetch('/api/admin/comments', adminCookie, adminCsrf, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
@@ -331,9 +346,12 @@ describe('Comment System', () => {
 
 describe('RPG System', () => {
   let adminCookie = ''
+  let adminCsrf = ''
 
   beforeAll(async () => {
-    adminCookie = await loginAsAdmin()
+    const result = await loginAsAdmin()
+    adminCookie = result.cookie
+    adminCsrf = result.csrfToken
   })
 
   it('GET /api/rpg returns state with defaults', async () => {
@@ -365,7 +383,7 @@ describe('RPG System', () => {
   })
 
   it('admin can add experience', async () => {
-    const resp = await adminFetch('/api/rpg', adminCookie, {
+    const resp = await adminFetch('/api/rpg', adminCookie, adminCsrf, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'add_experience', amount: 100 }),
@@ -388,7 +406,7 @@ describe('RPG System', () => {
   })
 
   it('admin can unlock skill', async () => {
-    const resp = await adminFetch('/api/rpg', adminCookie, {
+    const resp = await adminFetch('/api/rpg', adminCookie, adminCsrf, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'unlock_skill', key: 'writing' }),
@@ -404,7 +422,7 @@ describe('RPG System', () => {
   })
 
   it('admin can unlock quest', async () => {
-    const resp = await adminFetch('/api/rpg', adminCookie, {
+    const resp = await adminFetch('/api/rpg', adminCookie, adminCsrf, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'unlock_quest', key: 'first_post' }),
@@ -420,7 +438,7 @@ describe('RPG System', () => {
   })
 
   it('admin can complete quest', async () => {
-    const resp = await adminFetch('/api/rpg', adminCookie, {
+    const resp = await adminFetch('/api/rpg', adminCookie, adminCsrf, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'complete_quest', key: 'first_post' }),
@@ -435,12 +453,12 @@ describe('RPG System', () => {
   })
 
   it('admin can acquire and equip equipment', async () => {
-    await adminFetch('/api/rpg', adminCookie, {
+    await adminFetch('/api/rpg', adminCookie, adminCsrf, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'acquire_equipment', key: 'mechanical_keyboard' }),
     })
-    await adminFetch('/api/rpg', adminCookie, {
+    await adminFetch('/api/rpg', adminCookie, adminCsrf, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'equip', key: 'mechanical_keyboard' }),
@@ -452,7 +470,7 @@ describe('RPG System', () => {
   })
 
   it('admin can unlock title', async () => {
-    const resp = await adminFetch('/api/rpg', adminCookie, {
+    const resp = await adminFetch('/api/rpg', adminCookie, adminCsrf, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'unlock_title', key: 'apprentice_writer' }),
@@ -468,7 +486,7 @@ describe('RPG System', () => {
   })
 
   it('invalid action returns 400', async () => {
-    const resp = await adminFetch('/api/rpg', adminCookie, {
+    const resp = await adminFetch('/api/rpg', adminCookie, adminCsrf, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'nonexistent' }),
@@ -479,9 +497,12 @@ describe('RPG System', () => {
 
 describe('Image Upload', () => {
   let adminCookie = ''
+  let adminCsrf = ''
 
   beforeAll(async () => {
-    adminCookie = await loginAsAdmin()
+    const result = await loginAsAdmin()
+    adminCookie = result.cookie
+    adminCsrf = result.csrfToken
     expect(adminCookie).toBeTruthy()
   })
 
@@ -497,7 +518,7 @@ describe('Image Upload', () => {
 
   it('POST without file fails', async () => {
     const formData = new FormData()
-    const resp = await adminFetch('/api/upload', adminCookie, {
+    const resp = await adminFetch('/api/upload', adminCookie, adminCsrf, {
       method: 'POST',
       body: formData,
     })

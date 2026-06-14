@@ -7,28 +7,32 @@
 
       <form @submit.prevent="handleLogin" class="space-y-4">
         <div>
-          <label class="block text-sm mb-1" style="color: var(--color-text-secondary)">Username</label>
+          <label for="admin-username" class="block text-sm mb-1" style="color: var(--color-text-secondary)">Username</label>
           <input
+            id="admin-username"
             v-model="username"
             type="text"
             required
+            :aria-describedby="error ? 'login-error' : undefined"
             class="w-full px-3 py-2 rounded-lg text-sm"
             style="background: var(--color-crystal-glass, rgba(255,255,255,0.08)); border: 1px solid var(--color-crystal-border, rgba(255,255,255,0.1)); color: var(--color-text)"
           />
         </div>
 
         <div>
-          <label class="block text-sm mb-1" style="color: var(--color-text-secondary)">Password</label>
+          <label for="admin-password" class="block text-sm mb-1" style="color: var(--color-text-secondary)">Password</label>
           <input
+            id="admin-password"
             v-model="password"
             type="password"
             required
+            :aria-describedby="error ? 'login-error' : undefined"
             class="w-full px-3 py-2 rounded-lg text-sm"
             style="background: var(--color-crystal-glass, rgba(255,255,255,0.08)); border: 1px solid var(--color-crystal-border, rgba(255,255,255,0.1)); color: var(--color-text)"
           />
         </div>
 
-        <p v-if="error" class="text-red-400 text-sm">{{ error }}</p>
+        <p v-if="error" id="login-error" class="text-red-400 text-sm" role="alert">{{ error }}</p>
 
         <button
           type="submit"

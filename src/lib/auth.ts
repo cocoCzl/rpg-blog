@@ -1,6 +1,5 @@
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'crypto'
+import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto'
 import { getDb } from './db'
-import { generateCsrfToken } from './csrf'
 
 const SESSION_SECRET = (() => {
   const secret = process.env.SESSION_SECRET
@@ -34,28 +33,37 @@ function verifyPassword(password: string, stored: string): boolean {
 }
 
 export function createSessionToken(session: Session): string {
-  const payload = JSON.stringify(session)
+  return signPayload(session)
+}
+
+export function signPayload<T extends object>(data: T): string {
+  const payload = JSON.stringify(data)
   const encoded = Buffer.from(payload).toString('base64url')
-  const sig = createHash('sha256')
-    .update(encoded + SESSION_SECRET)
-    .digest('hex')
+  const sig = createHmac('sha256', SESSION_SECRET)
+    .update(encoded)
+    .digest('base64url')
   return `${encoded}.${sig}`
 }
 
-export function verifySessionToken(token: string): Session | null {
+export function verifyPayload<T extends object>(token: string): T | null {
   try {
     const [encoded, sig] = token.split('.')
     if (!encoded || !sig) return null
-    const expectedSig = createHash('sha256')
-      .update(encoded + SESSION_SECRET)
-      .digest('hex')
+    const expectedSig = createHmac('sha256', SESSION_SECRET)
+      .update(encoded)
+      .digest('base64url')
     if (sig.length !== expectedSig.length || !timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) return null
-    const session = JSON.parse(Buffer.from(encoded, 'base64url').toString()) as Session
-    if (Date.now() - session.createdAt > SESSION_MAX_AGE_MS) return null
-    return session
+    return JSON.parse(Buffer.from(encoded, 'base64url').toString()) as T
   } catch {
     return null
   }
+}
+
+export function verifySessionToken(token: string): Session | null {
+  const session = verifyPayload<Session>(token)
+  if (!session) return null
+  if (Date.now() - session.createdAt > SESSION_MAX_AGE_MS) return null
+  return session
 }
 
 export function getSessionMaxAgeSec(): number {
@@ -88,4 +96,22 @@ export function verifyAdminCredentials(username: string, password: string): bool
   const admin = db.prepare('SELECT password_hash FROM admins WHERE username = ?').get(username) as { password_hash: string } | undefined
   if (!admin) return false
   return verifyPassword(password, admin.password_hash)
+}
+
+export function getSessionCookieOpts() {
+  return {
+    path: '/' as const,
+    httpOnly: true,
+    secure: import.meta.env.PROD,
+    sameSite: 'lax' as const,
+  }
+}
+
+export function getCsrfCookieOpts() {
+  return {
+    path: '/' as const,
+    httpOnly: false,
+    secure: import.meta.env.PROD,
+    sameSite: 'strict' as const,
+  }
 }

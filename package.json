@@ -1,7 +1,7 @@
 {
   "name": "rpg-blog",
   "type": "module",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A personal blog template with RPG gamification, built on Astro + Vue 3 + SQLite",
   "scripts": {
     "dev": "astro dev",

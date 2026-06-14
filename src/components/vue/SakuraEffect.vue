@@ -36,6 +36,7 @@ function draw(ctx: CanvasRenderingContext2D, p: Petal) {
 }
 
 function animate(c: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+  if (document.hidden) return
   ctx.clearRect(0, 0, c.width, c.height); frameCount++
   for (const p of petals) {
     p.y += p.speed; p.x += p.speedX + Math.sin(frameCount * p.swingSpeed + p.swingOffset) * 0.5; p.rotation += p.rotationSpeed
@@ -56,11 +57,31 @@ function resize() {
 onMounted(() => {
   if (reducedMotion.value) return
   resize(); window.addEventListener('resize', resize)
+  document.addEventListener('visibilitychange', onVisibilityChange)
   animate(canvasRef.value!, canvasRef.value!.getContext('2d')!)
+  animationId = requestAnimationFrame(loop)
 })
 
+function loop() {
+  if (document.hidden) {
+    animationId = requestAnimationFrame(loop)
+    return
+  }
+  animate(canvasRef.value!, canvasRef.value!.getContext('2d')!)
+  animationId = requestAnimationFrame(loop)
+}
+
+function onVisibilityChange() {
+  if (!document.hidden && !animationId) {
+    animationId = requestAnimationFrame(loop)
+  }
+}
+
 onUnmounted(() => {
-  if (animationId) cancelAnimationFrame(animationId); window.removeEventListener('resize', resize); petals = []
+  if (animationId) cancelAnimationFrame(animationId)
+  window.removeEventListener('resize', resize)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+  petals = []
 })
 </script>
 

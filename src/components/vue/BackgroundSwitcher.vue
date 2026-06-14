@@ -48,12 +48,9 @@ async function loadImages() {
   layers.value[0].url = images.value[0]
   currentIdx = 0
   nextIdx = 1 % images.value.length
-  preload(images.value)
-}
-
-function preload(urls: string[]) {
-  for (const url of urls) {
-    if (url) new Image().src = url
+  // Only preload the next image, not all
+  if (images.value.length > 1) {
+    new Image().src = images.value[1]
   }
 }
 
@@ -68,6 +65,9 @@ function swap() {
   layers.value[next].url = images.value[currentIdx]
   layers.value[next].opacity = 1
   activeLayer = next
+  // Preload the image after next
+  const afterNext = (nextIdx + 1) % images.value.length
+  new Image().src = images.value[afterNext]
 }
 
 onMounted(async () => {

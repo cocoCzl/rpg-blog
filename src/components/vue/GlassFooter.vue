@@ -44,9 +44,20 @@ function updateClock() {
 onMounted(() => {
   updateClock()
   clockInterval = setInterval(updateClock, 1000)
+  document.addEventListener('visibilitychange', onVisibilityChange)
 })
 
 onUnmounted(() => {
   if (clockInterval) clearInterval(clockInterval)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
+
+function onVisibilityChange() {
+  if (document.hidden) {
+    if (clockInterval) { clearInterval(clockInterval); clockInterval = null }
+  } else {
+    updateClock()
+    clockInterval = setInterval(updateClock, 1000)
+  }
+}
 </script>

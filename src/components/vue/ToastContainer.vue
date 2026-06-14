@@ -3,6 +3,8 @@
     <div
       v-for="toast in toasts"
       :key="toast.id"
+      role="alert"
+      aria-live="assertive"
       class="px-4 py-2 rounded-lg text-sm font-medium shadow-lg transition-all duration-300 pointer-events-auto cursor-pointer"
       :style="toastStyle(toast.type)"
       @click="store.remove(toast.id)"
@@ -21,8 +23,8 @@ const toasts = computed(() => store.toasts)
 
 function toastStyle(type: string) {
   switch (type) {
-    case 'success': return 'background: #10B981; color: white'
-    case 'error': return 'background: #EF4444; color: white'
+    case 'success': return 'background: var(--color-success, #10B981); color: white'
+    case 'error': return 'background: var(--color-error, #EF4444); color: white'
     default: return 'background: var(--color-surface); color: var(--color-text)'
   }
 }

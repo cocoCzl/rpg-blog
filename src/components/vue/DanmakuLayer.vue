@@ -1,5 +1,14 @@
 <template>
-  <div ref="layerRef" class="danmaku-layer fixed inset-0 pointer-events-none z-10 overflow-hidden" />
+  <div ref="layerRef" class="danmaku-layer fixed inset-0 pointer-events-none z-10 overflow-hidden" :aria-hidden="paused || undefined" />
+  <button
+    class="fixed bottom-4 right-4 z-50 pointer-events-auto px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
+    style="background: var(--color-surface); color: var(--color-text-secondary)"
+    @click="togglePause"
+    :aria-pressed="paused"
+    :aria-label="paused ? 'Resume danmaku' : 'Pause danmaku'"
+  >
+    {{ paused ? '▶' : '⏸' }}
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -11,6 +20,7 @@ import DanmakuBubble from './DanmakuBubble.vue'
 const store = useDanmakuStore()
 const reducedMotion = useReducedMotion()
 const layerRef = ref<HTMLElement | null>(null)
+const paused = ref(false)
 
 interface ActiveDanmaku {
   id: string
@@ -31,8 +41,12 @@ function findTrack(): number {
   return Math.floor(Math.random() * MAX_TRACKS)
 }
 
+function togglePause() {
+  paused.value = !paused.value
+}
+
 function spawn() {
-  if (reducedMotion.value || !layerRef.value) return
+  if (paused.value || reducedMotion.value || !layerRef.value || store.items.length === 0) return
   const next = store.items.shift()
   if (!next) return
   const track = findTrack()

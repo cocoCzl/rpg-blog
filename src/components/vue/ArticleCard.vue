@@ -36,13 +36,15 @@
 
 <script setup lang="ts">
 import type { CollectionEntry } from 'astro:content'
+import config from '../../../site.config'
 
 defineProps<{
   article: CollectionEntry<'posts'>
 }>()
 
 function formatDate(date: Date): string {
-  return date.toLocaleDateString('en-US', {
+  const locale = config.locale === 'zh' ? 'zh-CN' : 'en-US'
+  return date.toLocaleDateString(locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

@@ -1,11 +1,23 @@
 import { getCollection } from 'astro:content'
 import type { APIRoute } from 'astro'
 
+let cachedPosts: ReturnType<typeof getCollection> | null = null
+let cacheExpiry = 0
+
+async function getCachedPosts() {
+  const now = Date.now()
+  if (!cachedPosts || now > cacheExpiry) {
+    cachedPosts = getCollection('posts')
+    cacheExpiry = now + 60_000 // 1 minute cache
+  }
+  return cachedPosts
+}
+
 export const GET: APIRoute = async ({ url }) => {
   const slug = url.searchParams.get('slug')
   let title = 'RPG Blog'
   if (slug) {
-    const posts = await getCollection('posts')
+    const posts = await getCachedPosts()
     const post = posts.find(p => p.slug === slug)
     if (post) title = post.data.title
   }
@@ -31,6 +43,11 @@ export const GET: APIRoute = async ({ url }) => {
   }
 }
 
+import { escapeXml } from '../lib/utils'
+
 function esc(s: string) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return escapeXml(s)
+    .replace(/`/g, '&#96;')
+    .replace(/\n/g, '&#10;')
+    .replace(/\r/g, '&#13;')
 }

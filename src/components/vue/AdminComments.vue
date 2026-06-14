@@ -8,19 +8,19 @@
       <div v-for="c in comments" :key="c.id" class="glass-card p-4 space-y-2">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <img v-if="c.author_avatar" :src="c.author_avatar" class="w-5 h-5 rounded-full" />
+            <img v-if="c.author_avatar" :src="c.author_avatar" class="w-5 h-5 rounded-full" :alt="`${c.author_name}'s avatar`" />
             <span class="text-sm font-medium">{{ c.author_name }}</span>
             <span class="text-xs" style="color: var(--color-text-secondary)">
               on {{ c.article_slug }} · {{ new Date(c.created_at).toLocaleDateString() }}
             </span>
           </div>
-          <span v-if="c.approved" class="text-xs px-2 py-0.5 rounded-full" style="background: #10B98120; color: #10B981">Approved</span>
-          <span v-else class="text-xs px-2 py-0.5 rounded-full" style="background: #F59E0B20; color: #F59E0B">Pending</span>
+          <span v-if="c.approved" class="text-xs px-2 py-0.5 rounded-full" style="background: var(--color-success, #10B98120); color: var(--color-success, #10B981)">Approved</span>
+          <span v-else class="text-xs px-2 py-0.5 rounded-full" style="background: var(--color-warning, #F59E0B20); color: var(--color-warning, #F59E0B)">Pending</span>
         </div>
         <p class="text-sm" style="color: var(--color-text)">{{ c.body }}</p>
         <div v-if="!c.approved" class="flex gap-2">
-          <button @click="moderate(c.id, 'approve')" class="px-3 py-1 rounded text-xs font-medium" style="background: #10B981; color: white">Approve</button>
-          <button @click="moderate(c.id, 'reject')" class="px-3 py-1 rounded text-xs font-medium" style="background: #EF4444; color: white">Reject</button>
+          <button @click="moderate(c.id, 'approve')" class="px-3 py-1 rounded text-xs font-medium" style="background: var(--color-success, #10B981); color: white" :aria-label="`Approve comment by ${c.author_name}`">Approve</button>
+          <button @click="moderate(c.id, 'reject')" class="px-3 py-1 rounded text-xs font-medium" style="background: var(--color-error, #EF4444); color: white" :aria-label="`Reject comment by ${c.author_name}`">Reject</button>
         </div>
       </div>
     </div>
@@ -30,23 +30,20 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getCookie } from '../../lib/client-cookie'
-
-interface Comment {
-  id: number
-  article_slug: string
-  author_name: string
-  author_avatar: string
-  body: string
-  approved: number
-  created_at: string
-}
+import type { Comment } from '../../lib/types'
 
 const comments = ref<Comment[]>([])
 const loading = ref(true)
 
 async function load() {
   loading.value = true
-  comments.value = await fetch('/api/admin/comments').then(r => r.json())
+  try {
+    const resp = await fetch('/api/admin/comments')
+    if (!resp.ok) throw new Error('Failed to load comments')
+    comments.value = await resp.json()
+  } catch {
+    comments.value = []
+  }
   loading.value = false
 }
 

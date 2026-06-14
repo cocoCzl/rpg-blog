@@ -1,10 +1,14 @@
 import type { APIRoute } from 'astro'
+import config from '../../site.config'
 
-const BASE_URL = process.env.SITE_URL || 'http://localhost:4321'
+const BASE_URL = config.siteUrl
 
 export const GET: APIRoute = () => {
   const robots = `User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /og-image
 Sitemap: ${BASE_URL}/sitemap.xml
 `
   return new Response(robots, {
