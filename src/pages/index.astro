@@ -3,34 +3,95 @@ import { getCollection } from 'astro:content'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import config from '../../site.config'
 import ArticleCardList from '../components/vue/ArticleCardList.vue'
+import { isRpgEnabled } from '../lib/features'
+import { t } from '../lib/i18n'
+import { getLocaleFromLocals } from '../lib/locale'
+import { filterPostsByLocale, sortPosts } from '../lib/posts'
+import { getSiteText } from '../lib/site-text'
 
 const allPosts = await getCollection('posts')
-
-const sortedPosts = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
-
 const pageSize = config.postsPerPage
+const locale = getLocaleFromLocals(Astro.locals)
+const siteText = getSiteText(config, locale)
+const sortedPosts = sortPosts(filterPostsByLocale(allPosts, locale))
 const totalPages = Math.ceil(sortedPosts.length / pageSize)
 const currentPage = 1
 const pageArticles = sortedPosts.slice(0, pageSize)
+const heroBackground = isRpgEnabled()
+  ? 'linear-gradient(to bottom right, var(--color-bg), color-mix(in srgb, var(--color-bg) 80%, var(--color-primary) 20%))'
+  : 'linear-gradient(to bottom right, var(--color-bg), var(--color-surface))'
+const topTags = Array.from(
+  sortedPosts.flatMap((post) => post.data.tags).reduce((map, tag) => {
+    map.set(tag, (map.get(tag) || 0) + 1)
+    return map
+  }, new Map<string, number>())
+).sort((a, b) => b[1] - a[1]).slice(0, 8)
 ---
 
 <BaseLayout>
-  <main class="min-h-screen" style="background: linear-gradient(to bottom right, var(--color-bg), color-mix(in srgb, var(--color-bg) 80%, var(--color-primary) 20%))">
+  <main class="min-h-screen" style={`background: ${heroBackground}`}>
     <div class="max-w-3xl mx-auto px-4 py-16">
       <header class="text-center mb-12 space-y-4 animate-fade-in">
         <h1 class="text-4xl md:text-5xl font-bold" style="font-family: var(--font-heading)">
-          {config.title}
+          {siteText.title}
         </h1>
         <p class="text-lg" style="color: var(--color-text-secondary)">
-          {config.description}
+          {siteText.description}
         </p>
       </header>
+
+      {!isRpgEnabled() && (
+        <section class="grid gap-4 md:grid-cols-[1.4fr_1fr] mb-10">
+          <div class="glass-card p-6 space-y-4">
+            <h2 class="text-lg font-bold" style="font-family: var(--font-heading); color: var(--color-text)">
+              {t('home.featured_notes', locale)}
+            </h2>
+            <div class="flex items-center gap-3">
+              {config.author.avatar && (
+                <img
+                  src={config.author.avatar}
+                alt={siteText.authorName}
+                  class="w-12 h-12 rounded-full object-cover"
+                  loading="lazy"
+                />
+              )}
+              <p class="text-sm" style="color: var(--color-text-secondary)">
+                {siteText.authorName}
+              </p>
+            </div>
+            <p class="text-sm leading-relaxed" style="color: var(--color-text-secondary)">
+              {siteText.homeIntro}
+            </p>
+          </div>
+          <div class="glass-card p-6 space-y-3">
+            <h2 class="text-lg font-bold" style="font-family: var(--font-heading); color: var(--color-text)">
+              {t('home.popular_tags', locale)}
+            </h2>
+            <div class="flex flex-wrap gap-2">
+              {topTags.map(([tag, count]) => (
+                <span class="px-2 py-1 rounded-full text-xs" style="background: var(--color-surface); color: var(--color-text-secondary)">
+                  #{tag} ({count})
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {!isRpgEnabled() && (
+        <div class="mb-6">
+          <h2 class="text-xl font-bold" style="font-family: var(--font-heading); color: var(--color-text)">
+            {t('home.recent_posts', locale)}
+          </h2>
+        </div>
+      )}
 
       <ArticleCardList
         articles={pageArticles}
         currentPage={currentPage}
         totalPages={totalPages}
         basePath="/page/"
+        locale={locale}
         client:load
       />
     </div>

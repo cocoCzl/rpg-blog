@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 
-const BASE = 'http://localhost:4321'
+import config from '../../site.config'
+import { BASE } from './test-base'
 
 describe('GitHub OAuth', () => {
   it('GET /api/auth/me returns anonymous when not logged in', async () => {
@@ -29,6 +30,6 @@ describe('GitHub Login UI', () => {
   })
 
   it('homepage includes nav bar', () => {
-    expect(html).toContain('RPG Blog')
+    expect(html).toContain(config.title)
   })
 })

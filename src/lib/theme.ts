@@ -1,6 +1,6 @@
 export interface AuthorConfig {
   name: string
-  avatar: string
+  avatar?: string
   bio: string
 }
 
@@ -37,15 +37,50 @@ export interface ThemeConfig {
   backgroundImages: string[]
 }
 
+export interface CspConfig {
+  scriptSrc?: string[]
+  styleSrc?: string[]
+  imgSrc?: string[]
+  connectSrc?: string[]
+  fontSrc?: string[]
+  frameSrc?: string[]
+}
+
+export interface SecurityConfig {
+  csp: CspConfig
+}
+
+export interface FeatureConfig {
+  comments: boolean
+  githubOAuth: boolean
+  rpg: boolean
+}
+
+export interface HomeConfig {
+  intro: string
+}
+
+export interface LocalizedSiteConfig {
+  title?: string
+  description?: string
+  homeIntro?: string
+  authorName?: string
+  authorBio?: string
+}
+
 export interface SiteConfig {
   siteUrl: string
   title: string
   description: string
+  home: HomeConfig
   author: AuthorConfig
   social: SocialLinks
   theme: ThemeConfig
   locale: 'zh' | 'en'
+  i18n?: Partial<Record<'zh' | 'en', LocalizedSiteConfig>>
   postsPerPage: number
+  features: FeatureConfig
+  security: SecurityConfig
 }
 
 export const themePresets: Record<string, ThemePreset> = {

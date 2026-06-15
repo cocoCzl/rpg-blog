@@ -1,0 +1,24 @@
+app = "rpg-blog"
+primary_region = "nrt"
+
+[build]
+
+[env]
+  HOST = "0.0.0.0"
+  PORT = "8080"
+  NODE_ENV = "production"
+  SQLITE_PATH = "/data/rpg-blog.db"
+  UPLOAD_PATH = "/data/uploads"
+  UPLOAD_URL_BASE = "/uploads"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[mounts]]
+  source = "rpg_blog_data"
+  destination = "/data"

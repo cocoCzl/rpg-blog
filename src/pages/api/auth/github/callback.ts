@@ -1,22 +1,27 @@
 import type { APIRoute } from 'astro'
 import { exchangeCode, consumeState } from '../../../../lib/github-oauth'
 import { createSessionToken, getSessionMaxAgeSec, signPayload, getSessionCookieOpts } from '../../../../lib/auth'
+import { isGithubAuthEnabled } from '../../../../lib/features'
+import { apiText, jsonError } from '../../../../lib/api-response'
 
 const JSON_HEADER = { 'Content-Type': 'application/json' }
 
 export const GET: APIRoute = async ({ url, cookies }) => {
+  if (!isGithubAuthEnabled()) {
+    return jsonError(apiText('api.github_comments_disabled'), 404, 'GITHUB_COMMENTS_DISABLED')
+  }
   const code = url.searchParams.get('code')
   const state = url.searchParams.get('state') || '/'
 
   if (!code) {
-    return new Response(JSON.stringify({ error: 'Missing authorization code' }), { status: 400, headers: JSON_HEADER })
+    return jsonError(apiText('api.missing_authorization_code'), 400, 'MISSING_AUTHORIZATION_CODE')
   }
 
   const redirectTo = consumeState(state) || '/'
 
   const result = await exchangeCode(code)
   if (!result) {
-    return new Response(JSON.stringify({ error: 'Failed to authenticate with GitHub' }), { status: 401, headers: JSON_HEADER })
+    return jsonError(apiText('api.github_auth_failed'), 401, 'GITHUB_AUTH_FAILED')
   }
 
   const maxAge = getSessionMaxAgeSec()

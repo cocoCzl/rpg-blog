@@ -17,7 +17,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 
-RUN mkdir -p /app/data /app/public/uploads && chown -R app:app /app
+RUN mkdir -p /app/storage/uploads && chown -R app:app /app
 
 USER app
 

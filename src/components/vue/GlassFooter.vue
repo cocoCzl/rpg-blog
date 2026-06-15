@@ -5,9 +5,23 @@
         <div class="flex items-center gap-4 text-xs" style="color: var(--color-text-secondary)">
           <span>{{ time }}</span>
           <span class="hidden sm:inline">|</span>
-          <span class="hidden sm:inline">Uptime: {{ uptime }}</span>
+          <span class="hidden sm:inline">{{ uptimeLabel }}: {{ uptime }}</span>
         </div>
-        <div class="flex flex-wrap justify-center gap-3 text-xs" style="color: var(--color-text-secondary)">
+        <div class="flex flex-wrap items-center justify-center gap-3 text-xs" style="color: var(--color-text-secondary)">
+          <template v-if="socialLinks.length > 0">
+            <a
+              v-for="link in socialLinks"
+              :key="link.label"
+              :href="link.href"
+              target="_blank"
+              rel="noreferrer"
+              class="hover:underline"
+              style="color: var(--color-text-secondary)"
+            >
+              {{ link.label }}
+            </a>
+            <span class="hidden sm:inline">|</span>
+          </template>
           <span>Astro</span>
           <span>Vue 3</span>
           <span>SQLite</span>
@@ -24,9 +38,22 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import config from '../../../site.config'
+import { t } from '../../lib/i18n'
 
-const author = config.author.name
+const props = defineProps<{
+  locale?: 'en' | 'zh'
+  author?: string
+}>()
+
+const author = props.author ?? config.author.name
 const year = new Date().getFullYear()
+const locale = props.locale ?? 'en'
+const uptimeLabel = t('footer.uptime', locale)
+const socialLinks = [
+  { label: 'GitHub', href: config.social.github },
+  { label: 'X', href: config.social.twitter },
+  { label: 'Website', href: config.social.website },
+].filter((link) => Boolean(link.href))
 const time = ref('')
 const uptime = ref('')
 let clockInterval: ReturnType<typeof setInterval> | null = null

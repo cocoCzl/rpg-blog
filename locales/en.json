@@ -1,13 +1,19 @@
 {
   "nav": {
     "home": "Home",
-    "about": "About"
+    "about": "About",
+    "rpg": "RPG"
   },
   "blog": {
     "title": "RPG Blog",
     "description": "A personal blog with RPG-style gamification",
     "no_articles": "No articles yet.",
-    "back_home": "Back to home"
+    "back_home": "Back to home",
+    "page": "Page",
+    "prev": "Prev",
+    "next": "Next",
+    "about_post": "About this post",
+    "written_by": "Written by"
   },
   "comment": {
     "title": "Comments",
@@ -16,14 +22,32 @@
     "post": "Post",
     "posting": "Posting...",
     "no_comments": "No comments yet. Be the first!",
-    "commenting_as": "Commenting as"
+    "commenting_as": "Commenting as",
+    "chars_remaining": "chars remaining",
+    "moderation_empty": "No comments to review.",
+    "on_post": "on",
+    "disabled": "Comments are disabled.",
+    "submit_failed": "Unable to post comment right now.",
+    "posted": "Comment submitted for review.",
+    "network_error": "Network error"
   },
   "rpg": {
     "character": "Character",
     "level": "Lv.",
     "skills": "Skills",
     "equipment": "Equipment",
-    "quests": "Quests"
+    "quests": "Quests",
+    "dashboard": "RPG Dashboard",
+    "attributes": "ATTRIBUTES",
+    "novice": "Novice",
+    "exp": "EXP",
+    "locked": "Locked",
+    "equipped": "Equipped",
+    "stored": "Stored",
+    "done": "Done",
+    "active": "Active",
+    "status_effects": "STATUS EFFECTS",
+    "active_effect": "is active"
   },
   "admin": {
     "login": "Admin Login",
@@ -36,6 +60,73 @@
     "approve": "Approve",
     "reject": "Reject",
     "pending": "Pending",
-    "approved": "Approved"
+    "approved": "Approved",
+    "welcome": "Welcome back. Use the navigation below to manage your blog.",
+    "upload": "Upload",
+    "image_upload": "Image Upload",
+    "logging_in": "Logging in...",
+    "login_failed": "Login failed",
+    "network_error": "Network error",
+    "load_failed": "Unable to load data right now.",
+    "action_failed": "Unable to complete that action."
+  },
+  "upload": {
+    "title": "Upload Image",
+    "select_image": "Select a PNG, JPEG, or WEBP image",
+    "copy_path": "Copy this path for your Markdown:",
+    "preview_alt": "Uploaded image preview",
+    "uploading": "Uploading...",
+    "upload_failed": "Upload failed",
+    "network_error": "Network error",
+    "uploaded_as": "Uploaded as",
+    "upload_success": "Upload complete"
+  },
+  "footer": {
+    "uptime": "Uptime"
+  },
+  "system": {
+    "loading": "Loading...",
+    "not_found": "Page not found."
+  },
+  "api": {
+    "comments_disabled": "Comments are disabled.",
+    "github_comments_disabled": "GitHub OAuth comments are disabled.",
+    "rpg_disabled": "RPG is disabled.",
+    "forbidden": "Forbidden",
+    "login_required": "Login required",
+    "session_expired": "Session expired",
+    "invalid_json": "Invalid JSON",
+    "article_slug_required": "article_slug is required",
+    "comment_fields_required": "article_slug and body are required",
+    "comment_too_long": "Comment is too long",
+    "invalid_user_data": "Invalid user data",
+    "id_action_required": "id and action (approve/reject) required",
+    "invalid_skill_key": "Invalid skill key",
+    "invalid_equipment_key": "Invalid equipment key",
+    "equipment_not_acquired": "Equipment not acquired",
+    "equipment_not_found": "Equipment not found",
+    "invalid_quest_key": "Invalid quest key",
+    "quest_not_unlocked": "Quest not unlocked",
+    "invalid_title_key": "Invalid title key",
+    "invalid_status_effect_key": "Invalid status effect key",
+    "experience_amount_invalid": "Experience amount must be between 1 and 10000",
+    "unknown_action": "Unknown action",
+    "invalid_form_data": "Invalid form data",
+    "no_file": "No file provided",
+    "file_too_large": "File size exceeds 10MB limit",
+    "file_type_invalid": "Only PNG, JPEG, and WEBP are allowed",
+    "file_magic_invalid": "File content does not match declared type",
+    "too_many_attempts": "Too many attempts. Try again later.",
+    "credentials_required": "Username and password are required",
+    "invalid_credentials": "Invalid credentials",
+    "github_oauth_disabled": "GitHub OAuth comments are disabled in site.config.ts",
+    "github_oauth_not_configured": "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in .env",
+    "missing_authorization_code": "Missing authorization code",
+    "github_auth_failed": "Failed to authenticate with GitHub"
+  },
+  "home": {
+    "recent_posts": "Recent posts",
+    "popular_tags": "Popular tags",
+    "featured_notes": "About the site"
   }
 }

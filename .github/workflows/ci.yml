@@ -1,0 +1,27 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: cp .env.example .env
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:integration
+        env:
+          ADMIN_USERNAME: admin
+          ADMIN_PASSWORD: change_me_immediately
+          SESSION_SECRET: ci-test-session-secret
+          SITE_URL: http://127.0.0.1:4321

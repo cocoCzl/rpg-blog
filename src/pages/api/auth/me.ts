@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro'
 import { verifySessionToken, verifyPayload } from '../../../lib/auth'
+import { isGithubAuthEnabled } from '../../../lib/features'
 
 const JSON_HEADER = {
   'Content-Type': 'application/json',
@@ -22,7 +23,7 @@ export const GET: APIRoute = async ({ cookies }) => {
     }
   }
 
-  if (githubCookie && githubSessionCookie) {
+  if (isGithubAuthEnabled() && githubCookie && githubSessionCookie) {
     const session = verifySessionToken(githubSessionCookie.value)
     if (session) {
       const user = verifyPayload<{ login: string; avatar_url: string; id: string | number }>(githubCookie.value)

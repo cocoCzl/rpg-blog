@@ -1,36 +1,41 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import { isCommentsEnabled } from '../../lib/features'
+import { t } from '../../lib/i18n'
+import { getLocaleFromLocals } from '../../lib/locale'
+
+const locale = getLocaleFromLocals(Astro.locals)
+const title = t('admin.dashboard', locale)
+const welcome = t('admin.welcome', locale)
+const commentsLabel = t('admin.comments', locale)
+const logoutLabel = t('admin.logout', locale)
 ---
 
-<BaseLayout title="Admin Dashboard">
+<BaseLayout title={title}>
   <main class="min-h-screen" style="background: linear-gradient(to bottom right, var(--color-bg), var(--color-surface))">
     <div class="max-w-3xl mx-auto px-4 py-16">
       <div class="glass-card p-8 space-y-6">
         <h1 class="text-2xl font-bold" style="font-family: var(--font-heading); color: var(--color-text)">
-          Admin Dashboard
+          {title}
         </h1>
         <p style="color: var(--color-text-secondary)">
-          Welcome back. Use the navigation below to manage your blog.
+          {welcome}
         </p>
         <div class="flex gap-4">
-          <a href="/admin/comments" class="px-4 py-2 rounded-lg text-sm font-medium"
-             style="background: var(--color-primary); color: var(--color-bg)">
-            Comments
-          </a>
+          {isCommentsEnabled() && (
+            <a href="/admin/comments" class="px-4 py-2 rounded-lg text-sm font-medium"
+               style="background: var(--color-primary); color: var(--color-bg)">
+              {commentsLabel}
+            </a>
+          )}
           <button class="px-4 py-2 rounded-lg text-sm font-medium"
                   style="background: var(--color-surface); color: var(--color-text)"
                   id="logout-btn">
-            Logout
+            {logoutLabel}
           </button>
         </div>
       </div>
     </div>
   </main>
 </BaseLayout>
-
-<script>
-  document.getElementById('logout-btn')?.addEventListener('click', async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
-    window.location.href = '/'
-  })
-</script>
+<script is:inline src="/admin-dashboard.js"></script>

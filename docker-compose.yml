@@ -10,15 +10,14 @@ services:
       HOST: 0.0.0.0
       PORT: 4321
       NODE_ENV: production
-      SQLITE_PATH: /app/data/rpg-blog.db
-      UPLOAD_PATH: /app/public/uploads
+      SQLITE_PATH: /app/storage/rpg-blog.db
+      UPLOAD_PATH: /app/storage/uploads
+      UPLOAD_URL_BASE: /uploads
     ports:
       - "4321:4321"
     volumes:
-      - sqlite_data:/app/data
-      - upload_data:/app/public/uploads
+      - app_storage:/app/storage
     restart: unless-stopped
 
 volumes:
-  sqlite_data:
-  upload_data:
+  app_storage:

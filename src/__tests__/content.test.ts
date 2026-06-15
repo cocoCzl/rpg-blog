@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 
+import config from '../../site.config'
+import { BASE } from './test-base'
+
 describe('Article Content Collections', () => {
   let homeHtml = ''
   let helloHtml = ''
@@ -7,9 +10,9 @@ describe('Article Content Collections', () => {
 
   beforeAll(async () => {
     const [home, hello, gs] = await Promise.all([
-      fetch('http://localhost:4321/').then(r => r.text()),
-      fetch('http://localhost:4321/posts/hello-world').then(r => r.text()),
-      fetch('http://localhost:4321/posts/getting-started').then(r => r.text()),
+      fetch(`${BASE}/`).then(r => r.text()),
+      fetch(`${BASE}/posts/hello-world`).then(r => r.text()),
+      fetch(`${BASE}/posts/getting-started`).then(r => r.text()),
     ])
     homeHtml = home
     helloHtml = hello
@@ -18,7 +21,7 @@ describe('Article Content Collections', () => {
 
   it('homepage lists articles', () => {
     expect(homeHtml).toContain('Hello World')
-    expect(homeHtml).toContain('Getting Started with RPG Blog')
+    expect(homeHtml).toContain('Getting Started with the Blog Template')
   })
 
   it('article page renders title', () => {
@@ -28,7 +31,7 @@ describe('Article Content Collections', () => {
 
   it('article page renders markdown content', () => {
     expect(helloHtml).toContain('Welcome')
-    expect(helloHtml).toContain('Happy blogging')
+    expect(helloHtml).toContain('Happy blogging!')
   })
 
   it('article page shows tags', () => {
@@ -40,6 +43,6 @@ describe('Article Content Collections', () => {
   })
 
   it('article page has back link', () => {
-    expect(helloHtml).toContain('Back to home')
+    expect(helloHtml).toContain(config.locale === 'zh' ? '返回首页' : 'Back to home')
   })
 })

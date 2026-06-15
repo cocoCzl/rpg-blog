@@ -3,36 +3,42 @@ import { getCollection } from 'astro:content'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import CommentSection from '../../components/vue/CommentSection.vue'
 import config from '../../../site.config'
+import { isCommentsEnabled } from '../../lib/features'
+import { t } from '../../lib/i18n'
+import { getLocaleFromLocals } from '../../lib/locale'
+import { findPostBySlugAndLocale, getPostLastModified, getPostUrl } from '../../lib/posts'
+import { getSiteText } from '../../lib/site-text'
 
-export const prerender = true
-
-export async function getStaticPaths() {
-  const posts = await getCollection('posts')
-  return posts.map((post) => ({
-    params: { slug: post.slug },
-    props: { post },
-  }))
+const locale = getLocaleFromLocals(Astro.locals)
+const siteText = getSiteText(config, locale)
+const { slug } = Astro.params
+const posts = await getCollection('posts')
+const post = slug ? findPostBySlugAndLocale(posts, slug, locale) : undefined
+if (!post) {
+  Astro.response.status = 404
 }
-
-const { post } = Astro.props
+if (!post) {
+  throw new Error(`Post not found: ${slug}`)
+}
 const { Content } = await post.render()
 ---
 
 <BaseLayout
   title={post.data.title}
   description={post.data.summary}
-  canonicalUrl={`${config.siteUrl}/posts/${post.slug}`}
+  canonicalUrl={getPostUrl(post, config.siteUrl)}
   ogType="article"
-  articleDate={post.data.date.toISOString()}
+  articleDate={getPostLastModified(post).toISOString()}
   jsonLd={{
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: post.data.title,
     description: post.data.summary,
     datePublished: post.data.date.toISOString(),
-    author: { '@type': 'Person', name: config.author.name },
+    dateModified: getPostLastModified(post).toISOString(),
+    author: { '@type': 'Person', name: siteText.authorName },
     image: post.data.cover ? `${config.siteUrl}${post.data.cover}` : undefined,
-    url: `${config.siteUrl}/posts/${post.slug}`,
+    url: getPostUrl(post, config.siteUrl),
   }}
 >
   <main class="min-h-screen" style="background: linear-gradient(to bottom right, var(--color-bg), var(--color-surface))">
@@ -40,8 +46,9 @@ const { Content } = await post.render()
       <header class="mb-10 space-y-4">
         <div class="flex flex-wrap items-center gap-3 text-sm" style="color: var(--color-text-secondary)">
           <time datetime={post.data.date.toISOString()}>
-            {post.data.date.toLocaleDateString(config.locale === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            {post.data.date.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
           </time>
+          {post.data.category && <span>{post.data.category}</span>}
           {post.data.tags.length > 0 && (
             <span class="flex gap-1.5">
               {post.data.tags.map(tag => (
@@ -80,12 +87,46 @@ const { Content } = await post.render()
       </div>
 
       <div class="mt-16 pt-8 text-sm" style="border-top: 1px solid var(--color-crystal-border, rgba(255,255,255,0.1)); color: var(--color-text-secondary)">
-        <a href="/" class="hover:underline">&larr; Back to home</a>
+        <a href="/" class="hover:underline">&larr; {t('blog.back_home', locale)}</a>
       </div>
 
-      <div class="mt-12">
-        <CommentSection articleSlug={post.slug} client:load />
-      </div>
+      {isCommentsEnabled() && (
+        <div class="mt-12">
+          <CommentSection articleSlug={post.slug} locale={locale} client:load />
+        </div>
+      )}
+      {!isCommentsEnabled() && (
+        <aside class="mt-12 glass-card p-6 space-y-4">
+          <h2 class="text-lg font-bold" style="font-family: var(--font-heading); color: var(--color-text)">
+            {t('blog.about_post', locale)}
+          </h2>
+          <div class="flex items-center gap-3">
+            {config.author.avatar && (
+              <img
+                src={config.author.avatar}
+                alt={siteText.authorName}
+                class="w-12 h-12 rounded-full object-cover"
+                loading="lazy"
+              />
+            )}
+            <p class="text-sm" style="color: var(--color-text-secondary)">
+              {t('blog.written_by', locale)} {siteText.authorName}
+            </p>
+          </div>
+          <p class="text-sm leading-relaxed" style="color: var(--color-text-secondary)">
+            {siteText.authorBio}
+          </p>
+          {post.data.tags.length > 0 && (
+            <div class="flex flex-wrap gap-2">
+              {post.data.tags.map(tag => (
+                <span class="px-2 py-1 rounded-full text-xs" style="background: var(--color-surface); color: var(--color-text-secondary)">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </aside>
+      )}
     </article>
   </main>
 </BaseLayout>

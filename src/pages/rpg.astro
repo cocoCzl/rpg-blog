@@ -6,12 +6,19 @@ import QuestLog from '../components/vue/QuestLog.vue'
 import CharacterPanel from '../components/vue/CharacterPanel.vue'
 import StatusEffectList from '../components/vue/StatusEffectList.vue'
 import AttributeBar from '../components/vue/AttributeBar.vue'
+import { isRpgEnabled } from '../lib/features'
 import { getDb } from '../lib/db'
 import type { StatusEffect } from '../lib/rpg-types'
 import type { RpgSkillState, RpgEquipmentState, RpgQuestState, RpgState, RpgStatusEffectState } from '../lib/rpg-state-types'
 import { DEFAULT_RPG_STATE } from '../lib/rpg-state-types'
 import { ATTRIBUTE_LABELS } from '../lib/rpg-types'
 import statusEffectsData from '../../data/rpg/status-effects'
+import { t } from '../lib/i18n'
+import { getLocaleFromLocals } from '../lib/locale'
+
+if (!isRpgEnabled()) {
+  Astro.response.status = 404
+}
 
 const db = getDb()
 const state = db.prepare('SELECT experience, level, current_title, hp, max_hp, mp, max_mp, atk, def, spd, luk FROM character_state LIMIT 1').get() as RpgState | undefined
@@ -27,6 +34,25 @@ const statusEffects: StatusEffect[] = statusEffectsData.map((e) => ({
 }))
 
 const rpgState = state || DEFAULT_RPG_STATE
+const locale = getLocaleFromLocals(Astro.locals)
+const attributeNames = {
+  en: {
+    hp: 'Vitality',
+    mp: 'Creativity',
+    atk: 'Coding Power',
+    def: 'Debug Defense',
+    spd: 'Deploy Speed',
+    luk: 'Interview Luck',
+  },
+  zh: {
+    hp: '生命力',
+    mp: '创造力',
+    atk: '编码攻击',
+    def: '调试防御',
+    spd: '部署速度',
+    luk: '面试运气',
+  },
+}
 const attrs = [
   { key: 'hp', value: rpgState.hp, max: rpgState.max_hp },
   { key: 'mp', value: rpgState.mp, max: rpgState.max_mp },
@@ -37,35 +63,39 @@ const attrs = [
 ]
 ---
 
-<BaseLayout title="RPG Dashboard">
-  <main class="min-h-screen" style="background: linear-gradient(to bottom right, var(--color-bg), var(--color-surface))">
-    <div class="max-w-4xl mx-auto px-4 py-16 space-y-6">
-      <h1 class="text-2xl font-bold" style="font-family: var(--font-heading)">RPG Dashboard</h1>
+<BaseLayout title={t('rpg.dashboard', locale)}>
+  {isRpgEnabled() ? (
+    <main class="min-h-screen" style="background: linear-gradient(to bottom right, var(--color-bg), var(--color-surface))">
+      <div class="max-w-4xl mx-auto px-4 py-16 space-y-6">
+        <h1 class="text-2xl font-bold" style="font-family: var(--font-heading)">{t('rpg.dashboard', locale)}</h1>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <CharacterPanel state={rpgState} skills={skills} client:load />
-        <div class="glass-card p-5 space-y-3">
-          <h3 class="text-sm font-bold" style="color: var(--color-accent)">ATTRIBUTES</h3>
-          {attrs.map(attr => (
-            <AttributeBar
-              label={ATTRIBUTE_LABELS[attr.key]!.label}
-              value={attr.value}
-              max={attr.max}
-              color={ATTRIBUTE_LABELS[attr.key]!.color}
-              realLabel={ATTRIBUTE_LABELS[attr.key]!.realLabel}
-              client:load
-            />
-          ))}
-          <StatusEffectList effects={statusEffects} client:load />
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CharacterPanel state={rpgState} skills={skills} locale={locale} client:load />
+          <div class="glass-card p-5 space-y-3">
+            <h3 class="text-sm font-bold" style="color: var(--color-accent)">{t('rpg.attributes', locale)}</h3>
+            {attrs.map(attr => (
+              <AttributeBar
+                label={ATTRIBUTE_LABELS[attr.key]!.label}
+                value={attr.value}
+                max={attr.max}
+                color={ATTRIBUTE_LABELS[attr.key]!.color}
+                realLabel={attributeNames[locale][attr.key]}
+                client:load
+              />
+            ))}
+            <StatusEffectList effects={statusEffects} locale={locale} client:load />
+          </div>
         </div>
-      </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SkillTree unlockedSkills={skills} client:load />
-        <EquipmentGrid equipmentState={equipment} client:load />
-      </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SkillTree unlockedSkills={skills} locale={locale} client:load />
+          <EquipmentGrid equipmentState={equipment} locale={locale} client:load />
+        </div>
 
-      <QuestLog questStates={quests} client:load />
-    </div>
-  </main>
+        <QuestLog questStates={quests} locale={locale} client:load />
+      </div>
+    </main>
+  ) : (
+    <main class="min-h-screen" />
+  )}
 </BaseLayout>

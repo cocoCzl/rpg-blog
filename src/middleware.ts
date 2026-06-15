@@ -1,14 +1,10 @@
 import { defineMiddleware } from 'astro:middleware'
 import { verifySessionToken, getCsrfCookieOpts } from './lib/auth'
 import { generateCsrfToken, verifyCsrfToken } from './lib/csrf'
+import config from '../site.config'
+import { resolveLocale } from './lib/locale'
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH'])
-
-const ADMIN_API_PREFIXES = [
-  '/api/admin/',
-  '/api/rpg',
-  '/api/upload',
-]
 
 const CSRF_PROTECTED_PREFIXES = [
   '/api/admin/',
@@ -16,12 +12,15 @@ const CSRF_PROTECTED_PREFIXES = [
   '/api/upload',
 ]
 
-const SITE_URL = process.env.SITE_URL || 'http://localhost:4321'
+function joinCspSources(defaults: string[], extras: string[] = []) {
+  return Array.from(new Set([...defaults, ...extras])).join(' ')
+}
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { url, cookies, request } = context
   const pathname = url.pathname
   const method = request.method.toUpperCase()
+  context.locals.locale = resolveLocale(cookies.get('locale')?.value || config.locale)
 
   if ((pathname === '/admin' || pathname.startsWith('/admin/')) && pathname !== '/admin/login') {
     const sessionCookie = cookies.get('session')
@@ -65,7 +64,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()')
-  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self'")
+  response.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      `script-src ${joinCspSources(["'self'"], config.security.csp.scriptSrc)}`,
+      `style-src ${joinCspSources(["'self'", "'unsafe-inline'"], config.security.csp.styleSrc)}`,
+      `img-src ${joinCspSources(["'self'", 'data:'], config.security.csp.imgSrc)}`,
+      `connect-src ${joinCspSources(["'self'"], config.security.csp.connectSrc)}`,
+      `font-src ${joinCspSources(["'self'"], config.security.csp.fontSrc)}`,
+      `frame-src ${joinCspSources(["'self'"], config.security.csp.frameSrc)}`,
+    ].join('; ')
+  )
   if (import.meta.env.PROD) {
     response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   }

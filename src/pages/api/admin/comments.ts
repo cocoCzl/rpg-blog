@@ -1,12 +1,15 @@
 import type { APIRoute } from 'astro'
 import { getDb } from '../../../lib/db'
 import { requireAdmin } from '../../../lib/auth'
+import { disabledJsonResponse, isCommentsEnabled } from '../../../lib/features'
+import { apiText, jsonError, jsonSuccess } from '../../../lib/api-response'
 
 const JSON_HEADER = { 'Content-Type': 'application/json' }
 
 export const GET: APIRoute = async ({ cookies }) => {
+  if (!isCommentsEnabled()) return disabledJsonResponse('comments')
   if (!requireAdmin(cookies)) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: JSON_HEADER })
+    return jsonError(apiText('api.forbidden'), 403, 'FORBIDDEN')
   }
   const db = getDb()
   const comments = db.prepare(
@@ -16,14 +19,15 @@ export const GET: APIRoute = async ({ cookies }) => {
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
+  if (!isCommentsEnabled()) return disabledJsonResponse('comments')
   if (!requireAdmin(cookies)) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: JSON_HEADER })
+    return jsonError(apiText('api.forbidden'), 403, 'FORBIDDEN')
   }
   const body = await request.json()
   const { id, action } = body || {}
   const numericId = Number(id)
   if (!Number.isFinite(numericId) || numericId <= 0 || !['approve', 'reject'].includes(action)) {
-    return new Response(JSON.stringify({ error: 'id and action (approve/reject) required' }), { status: 400, headers: JSON_HEADER })
+    return jsonError(apiText('api.id_action_required'), 400, 'ID_ACTION_REQUIRED')
   }
   const db = getDb()
   if (action === 'approve') {
@@ -31,5 +35,5 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   } else {
     db.prepare('DELETE FROM comments WHERE id = ?').run(numericId)
   }
-  return new Response(JSON.stringify({ success: true }), { headers: JSON_HEADER })
+  return jsonSuccess({ success: true })
 }

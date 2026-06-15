@@ -1,6 +1,10 @@
 import en from '../../locales/en.json'
+import zh from '../../locales/zh.json'
 
-const translations: Record<string, Record<string, unknown>> = { en }
+const translations: Record<string, Record<string, unknown>> = {
+  en,
+  zh,
+}
 
 export function t(key: string, locale = 'en'): string {
   const keys = key.split('.')
@@ -13,18 +17,8 @@ export function t(key: string, locale = 'en'): string {
 
 export async function loadLocale(locale: string) {
   if (!translations[locale]) {
-    if (!/^[a-z]{2}$/.test(locale)) {
-      console.warn(`Invalid locale "${locale}", falling back to "en"`)
-      translations[locale] = translations['en']
-      return
-    }
-    try {
-      const mod = await import(`../../locales/${locale}.json`)
-      translations[locale] = mod.default
-    } catch {
-      console.warn(`Locale "${locale}" not found, falling back to "en"`)
-      translations[locale] = translations['en']
-    }
+    console.warn(`Invalid locale "${locale}", falling back to "en"`)
+    translations[locale] = translations['en']
   }
 }
 

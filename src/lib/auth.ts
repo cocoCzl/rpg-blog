@@ -1,6 +1,33 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto'
 import { getDb } from './db'
 
+const DEFAULT_ADMIN_USERNAME = 'admin'
+const DEFAULT_ADMIN_PASSWORD = 'change_me_immediately'
+const DEFAULT_SESSION_SECRET = 'dev-secret-change-me'
+
+function assertProductionAuthConfig() {
+  if (process.env.NODE_ENV !== 'production') return
+  if (process.env.npm_lifecycle_event === 'build') return
+
+  const adminUsername = process.env.ADMIN_USERNAME
+  const adminPassword = process.env.ADMIN_PASSWORD
+  const sessionSecret = process.env.SESSION_SECRET
+
+  if (!adminUsername || !adminPassword) {
+    throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD must be set in production environment')
+  }
+
+  if (adminUsername === DEFAULT_ADMIN_USERNAME || adminPassword === DEFAULT_ADMIN_PASSWORD) {
+    throw new Error('Default admin credentials are not allowed in production environment')
+  }
+
+  if (!sessionSecret || sessionSecret === DEFAULT_SESSION_SECRET || sessionSecret === 'change_me_to_random_string') {
+    throw new Error('A strong SESSION_SECRET must be set in production environment')
+  }
+}
+
+assertProductionAuthConfig()
+
 const SESSION_SECRET = (() => {
   const secret = process.env.SESSION_SECRET
   if (secret) return secret
@@ -8,7 +35,7 @@ const SESSION_SECRET = (() => {
     throw new Error('SESSION_SECRET must be set in production environment')
   }
   console.warn('WARNING: SESSION_SECRET not set. Using insecure default. Set SESSION_SECRET in .env for production.')
-  return 'dev-secret-change-me'
+  return DEFAULT_SESSION_SECRET
 })()
 
 export interface Session {
@@ -78,8 +105,8 @@ export function requireAdmin(cookies: { get: (name: string) => { value: string }
 
 export function ensureAdminExists() {
   const db = getDb()
-  const adminUsername = process.env.ADMIN_USERNAME || 'admin'
-  const adminPassword = process.env.ADMIN_PASSWORD || 'change_me_immediately'
+  const adminUsername = process.env.ADMIN_USERNAME || DEFAULT_ADMIN_USERNAME
+  const adminPassword = process.env.ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD
 
   const existing = db.prepare('SELECT id FROM admins').all()
   if (existing.length === 0) {

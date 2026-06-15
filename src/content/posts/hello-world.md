@@ -2,7 +2,7 @@
 title: "Hello World"
 date: 2026-01-01
 tags: ["general"]
-summary: "Welcome to my new blog powered by RPG Blog template."
+summary: "Welcome to your new blog template."
 ---
 
 ## Welcome
@@ -14,7 +14,7 @@ This is your first blog post. You can write your articles in **Markdown** and th
 - **Code blocks** with syntax highlighting
 - **Images** with optimized loading
 - **Tags** for organizing content
-- **RPG gamification** to make blogging fun
+- **Optional feature modules** you can keep or disable
 
 ```javascript
 // You can write code blocks too

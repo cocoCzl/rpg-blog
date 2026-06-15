@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: rpg-blog
+    runtime: docker
+    plan: starter
+    autoDeploy: true
+    healthCheckPath: /
+    disk:
+      name: rpg-blog-data
+      mountPath: /app/storage
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4321
+      - key: HOST
+        value: 0.0.0.0
+      - key: SITE_URL
+        sync: false
+      - key: SQLITE_PATH
+        value: /app/storage/rpg-blog.db
+      - key: UPLOAD_PATH
+        value: /app/storage/uploads
+      - key: UPLOAD_URL_BASE
+        value: /uploads
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false

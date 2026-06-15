@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro'
 import { ensureAdminExists, verifyAdminCredentials, createSessionToken, getSessionMaxAgeSec, getSessionCookieOpts, getCsrfCookieOpts } from '../../../lib/auth'
 import { generateCsrfToken } from '../../../lib/csrf'
+import { apiText, jsonError } from '../../../lib/api-response'
 
 const AUTH_HEADER = {
   'Content-Type': 'application/json',
@@ -37,35 +38,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
   entry.count++
   if (entry.count > MAX_ATTEMPTS) {
-    return new Response(JSON.stringify({ error: 'Too many attempts. Try again later.' }), {
-      status: 429,
-      headers: AUTH_HEADER,
-    })
+    return jsonError(apiText('api.too_many_attempts'), 429, 'TOO_MANY_ATTEMPTS')
   }
 
   let body: { username?: string; password?: string }
   try {
     body = await request.json()
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
-      status: 400,
-      headers: AUTH_HEADER,
-    })
+    return jsonError(apiText('api.invalid_json'), 400, 'INVALID_JSON')
   }
   const { username, password } = body || {}
 
   if (!username || !password) {
-    return new Response(JSON.stringify({ error: 'Username and password are required' }), {
-      status: 400,
-      headers: AUTH_HEADER,
-    })
+    return jsonError(apiText('api.credentials_required'), 400, 'CREDENTIALS_REQUIRED')
   }
 
   if (!verifyAdminCredentials(username, password)) {
-    return new Response(JSON.stringify({ error: 'Invalid credentials' }), {
-      status: 401,
-      headers: AUTH_HEADER,
-    })
+    return jsonError(apiText('api.invalid_credentials'), 401, 'INVALID_CREDENTIALS')
   }
 
   const token = createSessionToken({

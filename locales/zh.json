@@ -1,13 +1,19 @@
 {
   "nav": {
     "home": "首页",
-    "about": "关于"
+    "about": "关于",
+    "rpg": "RPG"
   },
   "blog": {
     "title": "RPG 博客",
     "description": "一个带有 RPG 游戏化元素的个人博客",
     "no_articles": "暂无文章",
-    "back_home": "返回首页"
+    "back_home": "返回首页",
+    "page": "第",
+    "prev": "上一页",
+    "next": "下一页",
+    "about_post": "关于这篇文章",
+    "written_by": "作者"
   },
   "comment": {
     "title": "评论",
@@ -16,14 +22,32 @@
     "post": "发布",
     "posting": "发布中...",
     "no_comments": "还没有评论，来做第一个吧！",
-    "commenting_as": "评论身份"
+    "commenting_as": "评论身份",
+    "chars_remaining": "剩余字符",
+    "moderation_empty": "暂无待审核评论。",
+    "on_post": "文章",
+    "disabled": "评论功能已关闭。",
+    "submit_failed": "暂时无法发布评论。",
+    "posted": "评论已提交，等待审核。",
+    "network_error": "网络错误"
   },
   "rpg": {
     "character": "角色",
     "level": "等级",
     "skills": "技能",
     "equipment": "装备",
-    "quests": "任务"
+    "quests": "任务",
+    "dashboard": "RPG 面板",
+    "attributes": "属性",
+    "novice": "新手",
+    "exp": "经验",
+    "locked": "未解锁",
+    "equipped": "已装备",
+    "stored": "背包中",
+    "done": "已完成",
+    "active": "进行中",
+    "status_effects": "状态效果",
+    "active_effect": "已生效"
   },
   "admin": {
     "login": "管理员登录",
@@ -36,6 +60,73 @@
     "approve": "通过",
     "reject": "驳回",
     "pending": "待审核",
-    "approved": "已通过"
+    "approved": "已通过",
+    "welcome": "欢迎回来。使用下面的入口管理你的博客。",
+    "upload": "上传",
+    "image_upload": "图片上传",
+    "logging_in": "登录中...",
+    "login_failed": "登录失败",
+    "network_error": "网络错误",
+    "load_failed": "暂时无法加载数据。",
+    "action_failed": "暂时无法完成该操作。"
+  },
+  "upload": {
+    "title": "上传图片",
+    "select_image": "选择 PNG、JPEG 或 WEBP 图片",
+    "copy_path": "复制这个路径到你的 Markdown：",
+    "preview_alt": "已上传图片预览",
+    "uploading": "上传中...",
+    "upload_failed": "上传失败",
+    "network_error": "网络错误",
+    "uploaded_as": "已上传为",
+    "upload_success": "上传完成"
+  },
+  "footer": {
+    "uptime": "在线时长"
+  },
+  "system": {
+    "loading": "加载中...",
+    "not_found": "页面不存在。"
+  },
+  "api": {
+    "comments_disabled": "评论功能已关闭。",
+    "github_comments_disabled": "GitHub 评论登录已关闭。",
+    "rpg_disabled": "RPG 功能已关闭。",
+    "forbidden": "禁止访问",
+    "login_required": "需要先登录",
+    "session_expired": "会话已过期",
+    "invalid_json": "无效的 JSON 请求",
+    "article_slug_required": "必须提供 article_slug",
+    "comment_fields_required": "必须提供 article_slug 和 body",
+    "comment_too_long": "评论内容过长",
+    "invalid_user_data": "用户数据无效",
+    "id_action_required": "必须提供 id 和 action（approve/reject）",
+    "invalid_skill_key": "无效的技能 key",
+    "invalid_equipment_key": "无效的装备 key",
+    "equipment_not_acquired": "装备尚未获取",
+    "equipment_not_found": "未找到装备",
+    "invalid_quest_key": "无效的任务 key",
+    "quest_not_unlocked": "任务尚未解锁",
+    "invalid_title_key": "无效的称号 key",
+    "invalid_status_effect_key": "无效的状态效果 key",
+    "experience_amount_invalid": "经验值必须在 1 到 10000 之间",
+    "unknown_action": "未知操作",
+    "invalid_form_data": "无效的表单数据",
+    "no_file": "没有提供文件",
+    "file_too_large": "文件大小不能超过 10MB",
+    "file_type_invalid": "只允许 PNG、JPEG 和 WEBP",
+    "file_magic_invalid": "文件内容与声明类型不匹配",
+    "too_many_attempts": "尝试次数过多，请稍后再试。",
+    "credentials_required": "必须提供用户名和密码",
+    "invalid_credentials": "用户名或密码错误",
+    "github_oauth_disabled": "site.config.ts 中已关闭 GitHub OAuth 评论登录",
+    "github_oauth_not_configured": "GitHub OAuth 尚未配置，请在 .env 中设置 GITHUB_CLIENT_ID 和 GITHUB_CLIENT_SECRET",
+    "missing_authorization_code": "缺少授权 code",
+    "github_auth_failed": "GitHub 认证失败"
+  },
+  "home": {
+    "recent_posts": "最新文章",
+    "popular_tags": "热门标签",
+    "featured_notes": "关于本站"
   }
 }

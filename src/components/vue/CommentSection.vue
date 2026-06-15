@@ -1,13 +1,13 @@
 <template>
   <div class="space-y-6">
     <h3 class="text-lg font-semibold" style="font-family: var(--font-heading); color: var(--color-text)">
-      Comments ({{ comments.length }})
+      {{ copy.title }} ({{ comments.length }})
     </h3>
 
     <div v-if="githubUser" class="glass-card p-4 space-y-3">
       <textarea
         v-model="newComment"
-        placeholder="Write a comment..."
+        :placeholder="copy.placeholder"
         rows="3"
         maxlength="5000"
         class="w-full px-3 py-2 rounded-lg text-sm resize-none"
@@ -17,7 +17,7 @@
       />
       <div class="flex justify-between items-center">
         <span class="text-xs" style="color: var(--color-text-secondary)" id="comment-status">
-          Commenting as {{ githubUser.login }} · {{ 5000 - newComment.length }} chars remaining
+          {{ copy.commentingAs }} {{ githubUser.login }} · {{ 5000 - newComment.length }} {{ copy.charsRemaining }}
         </span>
         <button
           @click="submitComment"
@@ -25,20 +25,20 @@
           class="px-4 py-1.5 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50"
           style="background: var(--color-primary); color: var(--color-bg)"
         >
-          {{ submitting ? 'Posting...' : 'Post' }}
+          {{ submitting ? copy.posting : copy.post }}
         </button>
       </div>
     </div>
 
     <div v-else class="text-sm" style="color: var(--color-text-secondary)">
-      <a href="/api/auth/github/login" class="hover:underline" style="color: var(--color-primary)">
-        Login with GitHub
+      <a :href="loginHref" class="hover:underline" style="color: var(--color-primary)">
+        {{ copy.login }}
       </a>
-      to leave a comment.
+      {{ copy.loginSuffix }}
     </div>
 
     <div v-if="comments.length === 0" class="text-sm" style="color: var(--color-text-secondary)">
-      No comments yet. Be the first!
+      {{ copy.noComments }}
     </div>
 
     <div v-for="comment in comments" :key="comment.id" class="glass-card p-4 space-y-2">
@@ -55,8 +55,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { CommentDisplay } from '../../lib/types'
+import { t } from '../../lib/i18n'
+import { useToastStore } from '../../stores/toast'
+import { buildGithubLoginHref } from '../../lib/client-auth'
 
-const props = defineProps<{ articleSlug: string }>()
+const props = defineProps<{
+  articleSlug: string
+  locale?: 'en' | 'zh'
+}>()
+const locale = props.locale ?? 'en'
 
 interface GithubUser {
   login: string
@@ -70,6 +77,30 @@ const currentPage = ref(1)
 const githubUser = ref<GithubUser | null>(null)
 const newComment = ref('')
 const submitting = ref(false)
+const loginHref = buildGithubLoginHref(`/posts/${props.articleSlug}`)
+const toastStore = useToastStore()
+const copy = {
+  title: t('comment.title', locale),
+  placeholder: t('comment.placeholder', locale),
+  commentingAs: t('comment.commenting_as', locale),
+  charsRemaining: t('comment.chars_remaining', locale),
+  post: t('comment.post', locale),
+  posting: t('comment.posting', locale),
+  login: t('comment.login', locale),
+  loginSuffix: locale === 'zh' ? '后即可发表评论。' : 'to leave a comment.',
+  noComments: t('comment.no_comments', locale),
+  posted: t('comment.posted', locale),
+  submitFailed: t('comment.submit_failed', locale),
+  networkError: t('comment.network_error', locale),
+}
+const errorByCode: Record<string, string> = {
+  LOGIN_REQUIRED: t('api.login_required', locale),
+  SESSION_EXPIRED: t('api.session_expired', locale),
+  COMMENT_FIELDS_REQUIRED: t('api.comment_fields_required', locale),
+  COMMENT_TOO_LONG: t('api.comment_too_long', locale),
+  INVALID_USER_DATA: t('api.invalid_user_data', locale),
+  GITHUB_COMMENTS_DISABLED: t('api.github_comments_disabled', locale),
+}
 
 onMounted(async () => {
   const [commentsResp, meResp] = await Promise.all([
@@ -99,6 +130,7 @@ async function submitComment() {
         body: newComment.value.trim(),
       }),
     })
+    const data = await resp.json()
     if (resp.ok) {
       const newCommentBody = newComment.value.trim()
       newComment.value = ''
@@ -111,13 +143,18 @@ async function submitComment() {
           created_at: new Date().toISOString(),
         })
       }
+      toastStore.success(copy.posted)
+    } else {
+      toastStore.error(errorByCode[data.code] || data.error || copy.submitFailed)
     }
+  } catch {
+    toastStore.error(copy.networkError)
   } finally {
     submitting.value = false
   }
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString()
+  return new Date(dateStr).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US')
 }
 </script>

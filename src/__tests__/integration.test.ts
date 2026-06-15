@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-
-const BASE = 'http://localhost:4321'
+import config from '../../site.config'
+import { BASE } from './test-base'
 
 async function loginAsAdmin(): Promise<{ cookie: string; csrfToken: string }> {
   const resp = await fetch(`${BASE}/api/auth/login`, {
@@ -39,16 +39,16 @@ describe('Homepage', () => {
   })
 
   it('has nav bar with site title', () => {
-    expect(html).toContain('RPG Blog')
+    expect(html).toContain(config.title)
   })
 
   it('lists both demo articles', () => {
     expect(html).toContain('Hello World')
-    expect(html).toContain('Getting Started with RPG Blog')
+    expect(html).toContain('Getting Started with the Blog Template')
   })
 
   it('has article summaries', () => {
-    expect(html).toContain('Welcome to my new blog')
+    expect(html).toContain('Welcome to your new blog template')
   })
 
   it('renders HTML lang attribute', () => {
@@ -63,6 +63,49 @@ describe('Homepage', () => {
     expect(html).toContain('--color-primary')
     expect(html).toContain('--color-bg')
     expect(html).toContain('--font-heading')
+  })
+})
+
+describe('Locale Switching', () => {
+  it('sets locale cookie and redirects back to the requested path', async () => {
+    const resp = await fetch(`${BASE}/api/locale?locale=zh&redirect=/rpg`, { redirect: 'manual' })
+    expect(resp.status).toBe(302)
+    expect(resp.headers.get('location')).toBe('/rpg')
+    expect(resp.headers.get('set-cookie')).toContain('locale=zh')
+  })
+
+  it('renders localized site and component text for zh locale', async () => {
+    const home = await fetch(`${BASE}/`, { headers: { Cookie: 'locale=zh' } }).then(r => r.text())
+    expect(home).toContain('lang="zh"')
+    expect(home).toContain('起步博客')
+    expect(home).toContain('一个可直接部署的博客模板')
+    expect(home).toContain('博客模板快速开始')
+    expect(home).toContain('欢迎使用你的新博客模板')
+    expect(home).toContain('在线时长')
+    expect(home).toContain('>EN</a>')
+  })
+
+  it('renders localized post content for zh locale on stable post URLs', async () => {
+    const html = await fetch(`${BASE}/posts/hello-world`, { headers: { Cookie: 'locale=zh' } }).then(r => r.text())
+    expect(html).toContain('你好，世界')
+    expect(html).toContain('这是你的第一篇博客文章')
+    expect(html).toContain('开始写作吧')
+  })
+
+  it('renders localized RPG demo data for zh locale', async () => {
+    const html = await fetch(`${BASE}/rpg`, { headers: { Cookie: 'locale=zh' } }).then(r => r.text())
+    expect(html).toContain('RPG 面板')
+    expect(html).toContain('技能')
+    expect(html).toContain('写作')
+    expect(html).toContain('机械键盘')
+    expect(html).toContain('咖啡增益')
+  })
+
+  it('renders localized admin login for zh locale', async () => {
+    const html = await fetch(`${BASE}/admin/login`, { headers: { Cookie: 'locale=zh' } }).then(r => r.text())
+    expect(html).toContain('管理员登录')
+    expect(html).toContain('用户名')
+    expect(html).toContain('密码')
   })
 })
 
@@ -106,11 +149,11 @@ describe('Article Pages', () => {
   })
 
   it('title tag includes site name', () => {
-    expect(html).toContain('<title>Hello World - RPG Blog</title>')
+    expect(html).toContain(`<title>Hello World - ${config.title}</title>`)
   })
 
   it('meta description uses summary', () => {
-    expect(html).toContain('Welcome to my new blog powered by RPG Blog template')
+    expect(html).toContain('Welcome to your new blog template')
   })
 })
 
@@ -120,7 +163,7 @@ describe('Article Getting Started', () => {
 
   it('renders multiple tags', () => {
     expect(html).toContain('tutorial')
-    expect(html).toContain('rpg-blog')
+    expect(html).toContain('template')
   })
 
   it('renders date', () => {
@@ -137,7 +180,7 @@ describe('Article Getting Started', () => {
 describe('Pagination', () => {
   it('page 1 renders without page number in title', async () => {
     const html = await fetch(`${BASE}/`).then(r => r.text())
-    expect(html).toContain('RPG Blog')
+    expect(html).toContain(config.title)
   })
 })
 
@@ -160,11 +203,11 @@ describe('RSS Feed', () => {
   it('includes both articles as items', () => {
     expect(xml).toContain('<item>')
     expect(xml).toContain('<title>Hello World</title>')
-    expect(xml).toContain('<title>Getting Started with RPG Blog</title>')
+    expect(xml).toContain('<title>Getting Started with the Blog Template</title>')
   })
 
   it('includes channel title from config', () => {
-    expect(xml).toContain('<title>RPG Blog</title>')
+    expect(xml).toContain(`<title>${config.title}</title>`)
   })
 
   it('has pubDate for each item', () => {
@@ -187,7 +230,7 @@ describe('Sitemap', () => {
   })
 
   it('includes homepage URL', () => {
-    expect(xml).toContain('<loc>http://localhost:4321/</loc>')
+    expect(xml).toContain(`<loc>${config.siteUrl}/</loc>`)
   })
 
   it('includes article URLs', () => {
@@ -517,12 +560,10 @@ describe('Image Upload', () => {
   })
 
   it('POST without file fails', async () => {
-    const formData = new FormData()
     const resp = await adminFetch('/api/upload', adminCookie, adminCsrf, {
       method: 'POST',
-      body: formData,
     })
-    expect(resp.status).not.toBe(200) // Auth or validation error
+    expect(resp.status).toBe(400)
   })
 })
 
@@ -579,7 +620,7 @@ describe('RPG Page', () => {
 
   it('mentions skill tree', async () => {
     const html = await fetch(`${BASE}/rpg`).then(r => r.text())
-    expect(html).toContain('Skill Tree')
+    expect(html).toContain('Skills')
   })
 
   it('mentions equipment', async () => {
@@ -589,7 +630,7 @@ describe('RPG Page', () => {
 
   it('mentions quest log', async () => {
     const html = await fetch(`${BASE}/rpg`).then(r => r.text())
-    expect(html).toContain('Quest Log')
+    expect(html).toContain('Quests')
   })
 })
 
@@ -653,6 +694,14 @@ describe('Environment Config', () => {
     const content = readFileSync(resolve(import.meta.dirname, '../../.env.example'), 'utf-8')
     expect(content).toContain('https://github.com/settings/developers')
   })
+
+  it('.env.production.example exists with deployment-oriented defaults', () => {
+    const content = readFileSync(resolve(import.meta.dirname, '../../.env.production.example'), 'utf-8')
+    expect(content).toContain('SITE_URL=https://your-domain.com')
+    expect(content).toContain('SQLITE_PATH=/app/storage/rpg-blog.db')
+    expect(content).toContain('UPLOAD_PATH=/app/storage/uploads')
+    expect(content).toContain('SESSION_SECRET=replace_with_a_long_random_session_secret')
+  })
 })
 
 describe('Project Structure', () => {
@@ -670,6 +719,21 @@ describe('Project Structure', () => {
     expect(content).toContain('HEALTHCHECK')
   })
 
+  it('has deployment and upgrade docs', () => {
+    const deploymentDoc = readFileSync(resolve(import.meta.dirname, '../../DEPLOYMENT.md'), 'utf-8')
+    const upgradingDoc = readFileSync(resolve(import.meta.dirname, '../../UPGRADING.md'), 'utf-8')
+    const contributingDoc = readFileSync(resolve(import.meta.dirname, '../../CONTRIBUTING.md'), 'utf-8')
+    const scopeDoc = readFileSync(resolve(import.meta.dirname, '../../TEMPLATE_SCOPE.md'), 'utf-8')
+    const chineseReadme = readFileSync(resolve(import.meta.dirname, '../../README.zh-CN.md'), 'utf-8')
+    expect(deploymentDoc).toContain('Docker Compose')
+    expect(upgradingDoc).toContain('package.json')
+    expect(upgradingDoc).toContain('src/content.config.ts')
+    expect(contributingDoc).toContain('npm test')
+    expect(scopeDoc).toContain('Out of scope by default')
+    expect(chineseReadme).toContain('快速开始')
+    expect(chineseReadme).toContain('README.md')
+  })
+
   it('has docker-compose.yml', () => {
     const content = readFileSync(resolve(import.meta.dirname, '../../docker-compose.yml'), 'utf-8')
     expect(content).toContain('SQLITE_PATH')
@@ -681,6 +745,8 @@ describe('Project Structure', () => {
     const pkg = JSON.parse(readFileSync(resolve(import.meta.dirname, '../../package.json'), 'utf-8'))
     expect(pkg.scripts.dev).toBe('astro dev')
     expect(pkg.scripts.build).toBe('astro build')
-    expect(pkg.scripts.test).toBe('vitest run')
+    expect(pkg.scripts.setup).toBe('node scripts/setup.mjs')
+    expect(pkg.scripts['test:unit']).toBeTruthy()
+    expect(pkg.scripts['test:integration']).toBeTruthy()
   })
 })

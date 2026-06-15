@@ -1,5 +1,7 @@
 import { getCollection } from 'astro:content'
 import type { APIRoute } from 'astro'
+import config from '../../site.config'
+import { isPublishedPost } from '../lib/posts'
 
 let cachedPosts: ReturnType<typeof getCollection> | null = null
 let cacheExpiry = 0
@@ -15,10 +17,10 @@ async function getCachedPosts() {
 
 export const GET: APIRoute = async ({ url }) => {
   const slug = url.searchParams.get('slug')
-  let title = 'RPG Blog'
+  let title = config.title
   if (slug) {
     const posts = await getCachedPosts()
-    const post = posts.find(p => p.slug === slug)
+    const post = posts.filter(isPublishedPost).find(p => p.slug === slug)
     if (post) title = post.data.title
   }
 
@@ -31,7 +33,7 @@ export const GET: APIRoute = async ({ url }) => {
     </defs>
     <rect width="1200" height="630" fill="url(#bg)"/>
     <text x="600" y="280" text-anchor="middle" fill="#f5f0ff" font-size="56" font-weight="bold" font-family="serif">${esc(title)}</text>
-    <text x="600" y="350" text-anchor="middle" fill="#c0b0d8" font-size="28" font-family="sans-serif">rpg-blog</text>
+    <text x="600" y="350" text-anchor="middle" fill="#c0b0d8" font-size="28" font-family="sans-serif">${esc(config.title.toLowerCase())}</text>
   </svg>`
 
   try {

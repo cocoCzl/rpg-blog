@@ -4,6 +4,9 @@ import config from '../../site.config'
 import { themePresets } from '../lib/theme'
 import { isConfigured } from '../lib/github-oauth'
 import { loadLocale } from '../lib/i18n'
+import { isGithubAuthEnabled, isRpgEnabled } from '../lib/features'
+import { buildLocaleSwitchHref, getLocaleFromLocals } from '../lib/locale'
+import { getSiteText } from '../lib/site-text'
 import BackgroundSwitcher from '../components/vue/BackgroundSwitcher.vue'
 import GlassNavbar from '../components/vue/GlassNavbar.vue'
 import GlassFooter from '../components/vue/GlassFooter.vue'
@@ -12,7 +15,9 @@ import SakuraEffect from '../components/vue/SakuraEffect.vue'
 import AuroraEffect from '../components/vue/AuroraEffect.vue'
 import ToastContainer from '../components/vue/ToastContainer.vue'
 
-await loadLocale(config.locale)
+const currentLocale = getLocaleFromLocals(Astro.locals)
+await loadLocale(currentLocale)
+const siteText = getSiteText(config, currentLocale)
 
 const preset = themePresets[config.theme.preset]
 const c = preset.colors
@@ -45,16 +50,25 @@ export interface Props {
 }
 
 const pageTitle = Astro.props.title
-  ? `${Astro.props.title} - ${config.title}`
-  : config.title
-const pageDesc = Astro.props.description || config.description
+  ? `${Astro.props.title} - ${siteText.title}`
+  : siteText.title
+const pageDesc = Astro.props.description || siteText.description
 const canonicalUrl = Astro.props.canonicalUrl || config.siteUrl + (Astro.url.pathname !== '/' ? Astro.url.pathname : '')
 const ogImage = Astro.props.ogImage || `${config.siteUrl}/og-image?slug=${encodeURIComponent(Astro.props.title || '')}`
 const jsonLdStr = Astro.props.jsonLd ? JSON.stringify(Astro.props.jsonLd) : ''
+const showGithubLogin = isGithubAuthEnabled() && isConfigured()
+const showRpgNav = isRpgEnabled()
+const showRpgEffects = isRpgEnabled()
+const switchLocale = currentLocale === 'zh' ? 'en' : 'zh'
+const localeSwitchHref = buildLocaleSwitchHref(
+  switchLocale,
+  `${Astro.url.pathname}${Astro.url.search}${Astro.url.hash}`
+)
+const localeSwitchLabel = currentLocale === 'zh' ? 'EN' : '中文'
 ---
 
 <!doctype html>
-<html lang={config.locale} class={preset.mode}>
+<html lang={currentLocale} class={preset.mode}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -63,21 +77,10 @@ const jsonLdStr = Astro.props.jsonLd ? JSON.stringify(Astro.props.jsonLd) : ''
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="icon" type="image/png" href="/favicon.svg" />
-    {
-      config.locale === 'zh' ? (
-        <link rel="alternate" hreflang="en" href={canonicalUrl.replace(/\/zh\//, '/')} />
-      ) : null
-    }
-    {
-      config.locale === 'en' ? (
-        <link rel="alternate" hreflang="zh" href={`${config.siteUrl}/zh${Astro.url.pathname}`} />
-      ) : null
-    }
-    <link rel="alternate" hreflang={config.locale} href={canonicalUrl} />
     <link rel="canonical" href={canonicalUrl} />
-    <meta name="author" content={config.author.name} />
-    <meta property="og:locale" content={config.locale === 'zh' ? 'zh_CN' : 'en_US'} />
-    <meta property="og:site_name" content={config.title} />
+    <meta name="author" content={siteText.authorName} />
+    <meta property="og:locale" content={currentLocale === 'zh' ? 'zh_CN' : 'en_US'} />
+    <meta property="og:site_name" content={siteText.title} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDesc} />
     <meta property="og:type" content={Astro.props.ogType || 'website'} />
@@ -105,12 +108,19 @@ const jsonLdStr = Astro.props.jsonLd ? JSON.stringify(Astro.props.jsonLd) : ''
       Skip to content
     </a>
     <BackgroundSwitcher client:visible />
-    <SakuraEffect client:visible />
-    <AuroraEffect client:visible />
-    <GlassNavbar client:load>
+    {showRpgEffects ? <SakuraEffect client:visible /> : null}
+    {showRpgEffects ? <AuroraEffect client:visible /> : null}
+    <GlassNavbar
+      client:load
+      showRpgLink={showRpgNav}
+      localeSwitchHref={localeSwitchHref}
+      localeSwitchLabel={localeSwitchLabel}
+      locale={currentLocale}
+      title={siteText.title}
+    >
       {
-        isConfigured() ? (
-          <GithubLoginButton slot="actions" client:load />
+        showGithubLogin ? (
+          <GithubLoginButton slot="actions" locale={currentLocale} client:load />
         ) : null
       }
     </GlassNavbar>
@@ -119,7 +129,7 @@ const jsonLdStr = Astro.props.jsonLd ? JSON.stringify(Astro.props.jsonLd) : ''
         <slot />
       </main>
     </div>
-    <GlassFooter client:visible />
+    <GlassFooter locale={currentLocale} author={siteText.authorName} client:visible />
     <ToastContainer client:load />
   </body>
 </html>

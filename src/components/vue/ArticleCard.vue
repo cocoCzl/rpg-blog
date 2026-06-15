@@ -1,6 +1,6 @@
 <template>
   <article class="glass-card p-6 hover:shadow-glass-hover transition-all duration-300 hover:translate-y-[-2px]">
-    <a :href="`/posts/${article.slug}`" class="block space-y-3">
+    <a :href="`/posts/${article.data.baseSlug || article.slug.replace(/\\.(en|zh)$/, '')}`" class="block space-y-3">
       <div v-if="article.data.cover" class="w-full h-48 overflow-hidden rounded-lg">
         <img
           :src="article.data.cover"
@@ -36,14 +36,14 @@
 
 <script setup lang="ts">
 import type { CollectionEntry } from 'astro:content'
-import config from '../../../site.config'
 
-defineProps<{
+const props = defineProps<{
   article: CollectionEntry<'posts'>
+  locale?: 'en' | 'zh'
 }>()
 
 function formatDate(date: Date): string {
-  const locale = config.locale === 'zh' ? 'zh-CN' : 'en-US'
+  const locale = props.locale === 'zh' ? 'zh-CN' : 'en-US'
   return date.toLocaleDateString(locale, {
     year: 'numeric',
     month: 'long',

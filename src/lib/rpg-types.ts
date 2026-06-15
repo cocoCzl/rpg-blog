@@ -1,7 +1,9 @@
 export interface Skill {
   key: string
   name: string
+  nameZh?: string
   description: string
+  descriptionZh?: string
   icon: string
   level: number
   category: 'Active' | 'Passive'
@@ -11,7 +13,9 @@ export interface Skill {
 export interface Equipment {
   key: string
   name: string
+  nameZh?: string
   description: string
+  descriptionZh?: string
   icon: string
   slot: EquipmentSlot
   level?: number
@@ -40,8 +44,11 @@ export interface Title {
 export interface Quest {
   key: string
   name: string
+  nameZh?: string
   description: string
+  descriptionZh?: string
   objective: string
+  objectiveZh?: string
   target: number
   questType?: string
   difficulty?: number
@@ -76,7 +83,9 @@ export const ATTRIBUTE_LABELS: Record<string, { label: string; realLabel: string
 export interface StatusEffect {
   key: string
   name: string
+  nameZh?: string
   description: string
+  descriptionZh?: string
   effectType: 'BUFF' | 'DEBUFF' | 'NEUTRAL'
   icon: string
   color: string

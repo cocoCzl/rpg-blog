@@ -3,10 +3,11 @@ import { requireAdmin } from '../../lib/auth'
 import { writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { randomBytes } from 'crypto'
+import { apiText, jsonError, jsonSuccess } from '../../lib/api-response'
 
-const UPLOAD_DIR = process.env.UPLOAD_PATH || join(process.cwd(), 'public/uploads')
+const UPLOAD_DIR = process.env.UPLOAD_PATH || join(process.cwd(), 'data/uploads')
+const UPLOAD_URL_BASE = (process.env.UPLOAD_URL_BASE || '/uploads').replace(/\/+$/, '')
 const MAX_FILE_SIZE = 10 * 1024 * 1024
-const JSON_HEADER = { 'Content-Type': 'application/json' }
 
 function ext(name: string): string {
   const idx = name.lastIndexOf('.')
@@ -15,25 +16,27 @@ function ext(name: string): string {
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   if (!requireAdmin(cookies)) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), {
-      status: 403,
-      headers: JSON_HEADER,
-    })
+    return jsonError(apiText('api.forbidden'), 403, 'FORBIDDEN')
   }
 
-  const formData = await request.formData()
+  let formData: FormData
+  try {
+    formData = await request.formData()
+  } catch {
+    return jsonError(apiText('api.invalid_form_data'), 400, 'INVALID_FORM_DATA')
+  }
   const file = formData.get('file') as File | null
   if (!file) {
-    return new Response(JSON.stringify({ error: 'No file provided' }), { status: 400, headers: JSON_HEADER })
+    return jsonError(apiText('api.no_file'), 400, 'NO_FILE')
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    return new Response(JSON.stringify({ error: `File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit` }), { status: 400, headers: JSON_HEADER })
+    return jsonError(apiText('api.file_too_large'), 400, 'FILE_TOO_LARGE')
   }
 
   const allowedTypes = ['image/png', 'image/jpeg', 'image/webp']
   if (!allowedTypes.includes(file.type)) {
-    return new Response(JSON.stringify({ error: 'Only PNG, JPEG, and WEBP are allowed' }), { status: 400, headers: JSON_HEADER })
+    return jsonError(apiText('api.file_type_invalid'), 400, 'FILE_TYPE_INVALID')
   }
 
   const buffer = Buffer.from(await file.arrayBuffer())
@@ -47,7 +50,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     (file.type === 'image/webp' && magicHex.startsWith('52494646'))
   )
   if (!validMagic) {
-    return new Response(JSON.stringify({ error: 'File content does not match declared type' }), { status: 400, headers: JSON_HEADER })
+    return jsonError(apiText('api.file_magic_invalid'), 400, 'FILE_MAGIC_INVALID')
   }
 
   if (!existsSync(UPLOAD_DIR)) {
@@ -64,20 +67,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       const sharp = await import('sharp')
       const webpBuffer = await sharp.default(buffer).webp({ quality: 80 }).toBuffer()
       writeFileSync(join(UPLOAD_DIR, `${id}.webp`), webpBuffer)
-      const url = `/uploads/${id}.webp`
-      return new Response(JSON.stringify({ url, filename: `${id}.webp` }), {
-        status: 200,
-        headers: JSON_HEADER,
-      })
+      const url = `${UPLOAD_URL_BASE}/${id}.webp`
+      return jsonSuccess({ url, filename: `${id}.webp` })
     } catch {
       // sharp not available, save as original format
     }
   }
 
   writeFileSync(join(UPLOAD_DIR, filename), buffer)
-  const url = `/uploads/${filename}`
-  return new Response(JSON.stringify({ url, filename }), {
-    status: 200,
-    headers: JSON_HEADER,
-  })
+  const url = `${UPLOAD_URL_BASE}/${filename}`
+  return jsonSuccess({ url, filename })
 }

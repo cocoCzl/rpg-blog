@@ -10,7 +10,15 @@
         {{ title }}
       </a>
       <div class="flex items-center gap-4">
-        <a href="/rpg" class="text-xs hover:opacity-80 transition-opacity hidden sm:inline" style="color: var(--color-text-secondary)">RPG</a>
+        <a v-if="showRpgLink" href="/rpg" class="text-xs hover:opacity-80 transition-opacity hidden sm:inline" style="color: var(--color-text-secondary)">{{ rpgLabel }}</a>
+        <a
+          v-if="localeSwitchHref && localeSwitchLabel"
+          :href="localeSwitchHref"
+          class="text-xs hover:opacity-80 transition-opacity"
+          style="color: var(--color-text-secondary)"
+        >
+          {{ localeSwitchLabel }}
+        </a>
         <slot name="actions" />
       </div>
     </div>
@@ -19,9 +27,19 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import config from '../../../site.config'
+import { t } from '../../lib/i18n'
 
-const title = config.title
+const props = defineProps<{
+  showRpgLink?: boolean
+  localeSwitchHref?: string
+  localeSwitchLabel?: string
+  locale?: 'en' | 'zh'
+  title?: string
+}>()
+
+const title = props.title ?? 'Starter Blog'
+const locale = props.locale ?? 'en'
+const rpgLabel = t('nav.rpg', locale)
 const visible = ref(true)
 const navRef = ref<HTMLElement | null>(null)
 let hideTimeout: ReturnType<typeof setTimeout> | null = null

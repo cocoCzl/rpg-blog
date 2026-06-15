@@ -1,6 +1,6 @@
 <template>
   <div class="glass-card p-6 space-y-4">
-    <h2 class="text-lg font-bold" style="font-family: var(--font-heading); color: var(--color-text)">Quest Log</h2>
+    <h2 class="text-lg font-bold" style="font-family: var(--font-heading); color: var(--color-text)">{{ copy.title }}</h2>
     <div class="space-y-2">
       <div v-for="q in quests" :key="q.key" class="p-2 rounded-lg" style="background: var(--color-crystal-glass, rgba(255,255,255,0.05))">
         <div class="flex items-center justify-between">
@@ -18,23 +18,36 @@
 <script setup lang="ts">
 import questsData from '../../../data/rpg/quests'
 import type { RpgQuestState } from '../../lib/rpg-state-types'
+import { t } from '../../lib/i18n'
 
 const props = defineProps<{
   questStates: RpgQuestState[]
+  locale?: 'en' | 'zh'
 }>()
 
+const locale = props.locale ?? 'en'
 const stateMap: Record<string, string> = {}
 for (const q of (props.questStates ?? [])) {
   stateMap[q.quest_key] = q.status
 }
 
-const quests = questsData
+const quests = questsData.map((quest) => ({
+  ...quest,
+  name: locale === 'zh' ? quest.nameZh || quest.name : quest.name,
+  description: locale === 'zh' ? quest.descriptionZh || quest.description : quest.description,
+}))
+const copy = {
+  title: t('rpg.quests', locale),
+  done: t('rpg.done', locale),
+  active: t('rpg.active', locale),
+  locked: t('rpg.locked', locale),
+}
 
 function questStatusText(key: string) {
   const status = stateMap[key]
-  if (status === 'completed') return '✓ Done'
-  if (status === 'active') return '▶ Active'
-  return '🔒 Locked'
+  if (status === 'completed') return `✓ ${copy.done}`
+  if (status === 'active') return `▶ ${copy.active}`
+  return `🔒 ${copy.locked}`
 }
 
 function questStatusStyle(key: string) {

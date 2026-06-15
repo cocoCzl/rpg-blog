@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest'
-
-const BASE = 'http://localhost:4321'
+import { BASE } from './test-base'
 
 describe('Admin Authentication', () => {
   let sessionCookie = ''
@@ -58,7 +57,7 @@ describe('Admin Authentication', () => {
       method: 'POST',
       headers: {
         Cookie: sessionCookie,
-        Origin: 'http://localhost:4321',
+        Origin: BASE,
       },
     })
     expect(resp.ok).toBe(true)

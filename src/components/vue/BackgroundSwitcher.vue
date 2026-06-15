@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed inset-0 z-0">
+  <div class="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
     <div
       v-for="(img, idx) in layers"
       :key="idx"

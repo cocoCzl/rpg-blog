@@ -1,14 +1,14 @@
 ---
-title: "Getting Started with RPG Blog"
+title: "Getting Started with the Blog Template"
 date: 2026-02-15
-tags: ["tutorial", "rpg-blog"]
+tags: ["tutorial", "template"]
 cover: ""
-summary: "Learn how to set up and customize your RPG Blog template."
+summary: "Learn how to set up and customize this blog template."
 ---
 
 ## Getting Started
 
-After forking the **rpg-blog** template, here's what you need to do:
+After forking this template, here's what you need to do:
 
 ### 1. Configure your site
 

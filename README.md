@@ -1,216 +1,330 @@
 # RPG Blog
 
-> A personal blog template with RPG-style gamification, visual effects, and one-command Docker deployment. Built with Astro + Vue 3 + SQLite.
+English | [中文](./README.zh-CN.md)
 
-## Features
+An Astro blog template with RPG-style presentation, admin moderation, GitHub OAuth comments, SQLite persistence, and Docker deployment.
 
-**Blog**
-- Write articles in Markdown with frontmatter (title, date, tags, summary, cover)
-- Pre-rendered static article pages for fast loading
-- RSS feed, XML sitemap, robots.txt, and auto-generated OG images
-- Comment system with GitHub OAuth login and admin moderation
-- Image upload with auto WebP conversion via sharp
+This is an SSR template, not a static export. It is intended for users who want to fork the repo, customize content and theme, then deploy to a Node-capable host.
 
-**RPG Gamification**
-- Character panel with level, EXP bar, and attribute bars (HP/MP/ATK/DEF/SPD/LUK)
-- Skill tree, equipment grid, quest log, titles, and status effects
-- All RPG state editable via admin API
-- RPG Dashboard at `/rpg`
+## What you get
 
-**Visual Effects**
-- Animated sakura petals and aurora waves (Canvas-based)
-- Crossfading background image slideshow
-- Danmaku (弹幕) scrolling text system
-- Glass-morphism cards and navbar
-- All effects respect `prefers-reduced-motion`
+- Markdown posts with frontmatter validation
+- RSS, sitemap, robots.txt, and OG image generation
+- Admin login and comment moderation
+- Optional GitHub OAuth for reader comments
+- RPG dashboard, quests, equipment, skills, and status effects
+- Docker deployment with persistent SQLite and uploads
+- Unit tests, integration tests, and GitHub Actions CI
 
-**Customization**
-- 3 built-in theme presets (Ocean, Forest, Twilight)
-- i18n: Chinese (zh) and English (en) with dynamic locale loading
-- RPG data defined in TypeScript — easy to extend
+## Before you fork
 
-**Security**
-- CSRF protection on all admin mutation endpoints
-- Session signing with HMAC-SHA256 and expiry validation
-- Admin password hashed with scrypt
-- Rate limiting on login endpoint (5 attempts/minute/IP)
-- File upload size limit (10MB)
-- httpOnly session cookies with SameSite
+- This project uses `@astrojs/node` in SSR mode.
+- `GitHub Pages` is not a fit because comments, auth, uploads, and SQLite require a server runtime.
+- Good deployment targets: VPS + Docker, Railway, Render, Fly.io, or any Node host with persistent disk.
 
-## Quick Start
-
-### 1. Fork and clone
+## Quick start
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/rpg-blog.git my-blog
 cd my-blog
-```
-
-### 2. Install dependencies
-
-```bash
 npm install
+cp .env.example .env
+npm run setup
+npm run dev
 ```
 
-### 3. Configure your blog
+Open `http://localhost:4321`.
 
-Edit `site.config.ts`:
+`npm run setup` updates `site.config.ts` and `.env` with your site title, author info, URL, theme preset, feature toggles, admin credentials, and a generated session secret.
+It now starts with a template profile choice: `plain`, `comments`, `rpg`, or `manual`, and a starter content choice: keep demo posts or replace them with a single starter post for your site.
+At the end, it prints a profile-aware checklist for local review, OAuth setup, content cleanup, tests, and deployment.
+Social profile prompts can be left blank, and empty links stay hidden in the UI.
+The author avatar can also be left blank; author sections fall back to text-only layout.
+
+## Configuration
+
+### `site.config.ts`
+
+Use [site.config.ts](./site.config.ts) for template-level customization:
+
+- `title`, `description`, `author`
+- `home.intro`
+- `social`
+- `theme.preset`
+- `locale`
+- `postsPerPage`
+- `features`
+- `security.csp`
+
+`locale` is a site-wide language setting. The current template does not generate parallel `/en/...` and `/zh/...` route trees.
+
+`home.intro` is the site-level introduction used on the plain blog homepage. Keep it separate from `author.bio`, which is better treated as person-level profile text.
+
+`features` lets you switch major modules off without deleting code:
 
 ```ts
-title: 'My Blog'
-description: 'Welcome to my blog'
-author: { name: 'Me', avatar: '/my-avatar.jpg', bio: '...' }
-theme: { preset: 'twilight' }       // ocean | forest | twilight
-locale: 'en'                         // en | zh
-postsPerPage: 6
+features: {
+  comments: true,
+  githubOAuth: true,
+  rpg: true,
+}
 ```
 
-### 4. Set up environment
+- `comments: false`: hides comment UI and disables comment APIs/admin moderation
+- `githubOAuth: false`: disables GitHub login for readers
+- `rpg: false`: removes the RPG nav entry and disables `/rpg` plus `/api/rpg`
 
-```bash
-cp .env.example .env
+When `rpg: false`, the layout also skips RPG-specific ambient effects such as sakura and aurora, so the default presentation reads more like a standard blog.
+
+`security.csp` lets you extend strict defaults when you add external assets:
+
+```ts
+security: {
+  csp: {
+    imgSrc: ['https://images.example.com'],
+    scriptSrc: ['https://plausible.io'],
+    connectSrc: ['https://plausible.io'],
+  },
+}
 ```
 
-Edit `.env`:
+### `.env`
+
+Required in production:
 
 ```env
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=your_secure_password
-GITHUB_CLIENT_ID=your_github_oauth_client_id
-GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
-SESSION_SECRET=a_long_random_string
+SITE_URL=https://your-domain.com
+ADMIN_USERNAME=your_admin_username
+ADMIN_PASSWORD=replace_with_a_long_random_password
+SESSION_SECRET=replace_with_a_long_random_session_secret
 ```
 
-To enable GitHub OAuth comments: create an OAuth App at [GitHub Developer Settings](https://github.com/settings/developers) with callback URL `https://your-domain/api/auth/github/callback`.
+Optional:
 
-### 5. Write articles
+```env
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+SQLITE_PATH=./data/rpg-blog.db
+UPLOAD_PATH=./data/uploads
+UPLOAD_URL_BASE=/uploads
+```
 
-Create `.md` files in `src/content/posts/`:
+Production startup now fails if admin credentials are missing or left at unsafe defaults.
+
+For deployment, use [.env.production.example](./.env.production.example) as the production reference instead of reusing local-development defaults blindly.
+
+## Content authoring
+
+Create posts in `src/content/posts/`:
 
 ```md
 ---
 title: "My First Post"
-date: 2026-06-13
-tags: ["tech", "tutorial"]
-summary: "A short description for previews"
+date: 2026-06-15
+updated: 2026-06-16
+tags: ["astro", "blog"]
+category: "Engineering"
+summary: "Short preview text"
 cover: "/uploads/cover.webp"
+draft: false
+featured: true
+canonicalUrl: "https://your-domain.com/posts/my-first-post"
 ---
 
-Your Markdown content here...
+Post body here.
 ```
 
-### 6. Run locally
+Supported frontmatter fields:
 
-```bash
-npm run dev
-# Open http://localhost:4321
+- `title`
+- `date`
+- `updated`
+- `tags`
+- `category`
+- `summary`
+- `cover`
+- `draft`
+- `featured`
+- `canonicalUrl`
+
+Posts with `draft: true` are excluded from homepage, pagination, RSS, sitemap, and prerendered article routes.
+
+## RPG customization
+
+Edit `data/rpg/`:
+
+- `skills.ts`
+- `equipment.ts`
+- `titles.ts`
+- `quests.ts`
+- `status-effects.ts`
+
+This data stays in TypeScript so template users can extend it without adding a CMS.
+
+## Comments and auth
+
+Admin auth works with local credentials from `.env`.
+
+Reader comments use GitHub OAuth if these env vars are set:
+
+```env
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
 ```
 
-### 7. Deploy
+Create the OAuth app at <https://github.com/settings/developers>.
 
-```bash
-docker compose up -d
-# Blog live at http://your-server:4321
+- Homepage URL: your public site URL
+- Callback URL: `https://your-domain.com/api/auth/github/callback`
+
+If GitHub OAuth is not configured, the reader login button is hidden and comment posting remains unavailable.
+
+## Template profiles
+
+Most users forking this repo do not want to redesign the whole system first. Start from one of these profiles and customize from there.
+
+### Plain blog
+
+Use this when you only want articles, pagination, RSS, sitemap, uploads, and a small admin backend.
+
+```ts
+features: {
+  comments: false,
+  githubOAuth: false,
+  rpg: false,
+}
 ```
 
-## Running Tests
+Recommended env:
+
+```env
+SITE_URL=https://your-domain.com
+ADMIN_USERNAME=your_admin_username
+ADMIN_PASSWORD=replace_with_a_long_random_password
+SESSION_SECRET=replace_with_a_long_random_session_secret
+```
+
+What changes automatically:
+
+- RPG nav entry is removed
+- `/rpg` and `/api/rpg` are disabled
+- Comment UI and moderation endpoints are disabled
+- The layout skips RPG ambient effects
+- The homepage switches to a more standard blog presentation with site notes, tags, and recent posts
+- `npm run setup` can generate this directly by choosing the `plain` profile
+
+### Comment-enabled blog
+
+Use this when you want a standard blog with reader discussion, but no RPG module.
+
+```ts
+features: {
+  comments: true,
+  githubOAuth: true,
+  rpg: false,
+}
+```
+
+Required env additions:
+
+```env
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
+```
+
+This keeps the blog-first presentation while enabling GitHub comment login and moderation.
+- `npm run setup` can generate this directly by choosing the `comments` profile
+
+### Full RPG blog
+
+Use this when you want the original template experience with blog posts, comments, and the RPG dashboard.
+
+```ts
+features: {
+  comments: true,
+  githubOAuth: true,
+  rpg: true,
+}
+```
+
+Required env:
+
+- base production env
+- GitHub OAuth env
+
+Then customize `data/rpg/` and `site.config.ts` to fit your own world, mechanics, and writing style.
+- `npm run setup` uses this as the default profile
+
+### For custom frontend changes
+
+Template customizers can rely on stable API error codes such as `FORBIDDEN`, `LOGIN_REQUIRED`, `COMMENTS_DISABLED`, `GITHUB_COMMENTS_DISABLED`, and `RPG_DISABLED`. This makes it easier to replace the default Vue components with your own UI without parsing localized error strings.
+
+## Deploy
+
+Deployment instructions live in [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+Supported paths documented there:
+
+- Docker Compose
+- Plain Node host
+- Render
+- Fly.io
+
+Uploads are served at `/uploads/*`, and local development also defaults to `./data/uploads` so user content stays outside source-controlled template assets.
+
+## Upgrading
+
+If you keep your site as a long-lived fork, use [UPGRADING.md](./UPGRADING.md) when pulling in newer template changes.
+
+## Contributing
+
+Template contribution expectations live in [CONTRIBUTING.md](./CONTRIBUTING.md), and the intended product boundary lives in [TEMPLATE_SCOPE.md](./TEMPLATE_SCOPE.md).
+
+## Tests
 
 ```bash
-# Unit tests (auth, CSRF, stores)
-npm test -- src/__tests__/stores.test.ts
-
-# Integration tests (requires dev server running)
-npm run dev &
 npm test
+npm run test:integration
+npm run test:all
 ```
 
-## Customizing RPG Data
+- `npm test`: fast unit coverage
+- `npm run test:integration`: starts the Astro dev server automatically, then runs HTTP-level tests
+- `npm run test:all`: both
 
-Edit TypeScript files in `data/rpg/`:
+## CI
 
-| File | Purpose |
-|---|---|
-| `skills.ts` | Skills the character can learn |
-| `equipment.ts` | Equippable items with 8 slot types |
-| `titles.ts` | Unlockable character titles |
-| `quests.ts` | Quests with objectives, rewards, difficulty |
-| `status-effects.ts` | Buff/debuff effects on the character |
+GitHub Actions lives at [.github/workflows/ci.yml](./.github/workflows/ci.yml) and runs:
 
-## Directory Structure
+- `npm run build`
+- `npm test`
+- `npm run test:integration`
 
-```
-rpg-blog/
-├── data/rpg/                  # RPG definitions
-├── locales/                   # Translation files (zh.json, en.json)
+## Project structure
+
+```text
+.
+├── data/rpg/
 ├── public/
-│   ├── favicon.svg
-│   └── uploads/               # Uploaded images (gitignored)
+├── scripts/
 ├── src/
-│   ├── __tests__/             # Unit & integration tests
-│   ├── components/vue/        # Vue 3 components (20)
-│   ├── composables/           # Vue composables (useReducedMotion)
-│   ├── content/posts/         # Your Markdown articles
-│   ├── layouts/               # Page layouts (BaseLayout)
-│   ├── lib/                   # Core utilities
-│   │   ├── auth.ts            # Session management & scrypt hashing
-│   │   ├── csrf.ts            # CSRF token generation
-│   │   ├── db.ts              # SQLite init, migrations, indexes
-│   │   ├── github-oauth.ts    # GitHub OAuth flow with state nonce
-│   │   ├── i18n.ts            # i18n with dynamic locale loading
-│   │   ├── rpg-types.ts       # RPG TypeScript interfaces
-│   │   └── theme.ts           # Theme presets & colors
-│   ├── pages/                 # Routes and API endpoints
-│   │   ├── api/               # REST API
-│   │   │   ├── auth/          # Login, logout, me, GitHub OAuth
-│   │   │   ├── admin/         # Comment moderation
-│   │   │   ├── comments.ts    # Comment CRUD with pagination
-│   │   │   ├── rpg.ts         # RPG state read & admin mutations
-│   │   │   └── upload.ts      # Image upload with WebP conversion
-│   │   ├── admin/             # Admin panel pages
-│   │   ├── posts/[slug].astro # Article pages (pre-rendered)
-│   │   └── rpg.astro          # RPG Dashboard (SSR)
-│   ├── stores/                # Pinia stores (auth, danmaku, toast)
-│   └── styles/                # Global CSS with Tailwind
-├── site.config.ts             # Blog configuration
-├── astro.config.mjs           # Astro SSR + Vue + Tailwind config
-├── tailwind.config.mjs        # Custom brand colors & animations
-├── Dockerfile                 # Multi-stage production build
-├── docker-compose.yml         # One-command deployment
-└── vitest.config.ts           # Vitest with Vue & jsdom
+│   ├── content/posts/
+│   ├── components/vue/
+│   ├── layouts/
+│   ├── lib/
+│   └── pages/
+├── .github/workflows/ci.yml
+├── DEPLOYMENT.md
+├── CONTRIBUTING.md
+├── TEMPLATE_SCOPE.md
+├── UPGRADING.md
+├── docker-compose.yml
+├── Dockerfile
+├── site.config.ts
+├── .env.example
+└── .env.production.example
 ```
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Framework | Astro 5 (SSR mode) |
-| UI | Vue 3 + Pinia |
-| Styling | Tailwind CSS 3 + CSS custom properties |
-| Database | SQLite via better-sqlite3 (WAL mode) |
-| Auth | GitHub OAuth + scrypt + HMAC-SHA256 sessions |
-| Image Processing | sharp (SVG OG images, WebP conversion) |
-| Testing | Vitest + jsdom + vue-test-utils |
-| Deployment | Docker + docker-compose |
-
-## API Overview
-
-| Endpoint | Method | Description |
-|---|---|---|
-| `/api/comments` | GET | List approved comments (paginated) |
-| `/api/comments` | POST | Submit comment (GitHub login required) |
-| `/api/rpg` | GET | Get full character state |
-| `/api/rpg` | POST | Admin: modify RPG state |
-| `/api/auth/me` | GET | Current user session |
-| `/api/auth/login` | POST | Admin login (rate-limited) |
-| `/api/auth/logout` | GET/POST | Clear session |
-| `/api/auth/github/login` | GET | Redirect to GitHub OAuth |
-| `/api/auth/github/callback` | GET | GitHub OAuth callback |
-| `/api/admin/comments` | GET/POST | Admin: moderate comments |
-| `/api/upload` | POST | Admin: upload image (CSRF-protected) |
-| `/feed.xml` | GET | RSS 2.0 feed |
-| `/sitemap.xml` | GET | XML sitemap |
-| `/og-image` | GET | SVG/PNG OG images |
 
 ## License
 
-MIT
+MIT. See [LICENSE](./LICENSE).

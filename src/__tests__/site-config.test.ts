@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import config from '../../site.config'
 import { themePresets } from '../lib/theme'
 
@@ -8,8 +8,14 @@ describe('Site Config', () => {
     expect(typeof config.title).toBe('string')
   })
 
+  it('has homepage intro copy', () => {
+    expect(config.home.intro).toBeTruthy()
+    expect(typeof config.home.intro).toBe('string')
+  })
+
   it('has valid author', () => {
     expect(config.author.name).toBeTruthy()
+    expect(typeof config.author.avatar).toBe('string')
   })
 
   it('theme preset exists in presets', () => {
@@ -24,6 +30,26 @@ describe('Site Config', () => {
 
   it('has positive postsPerPage', () => {
     expect(config.postsPerPage).toBeGreaterThan(0)
+  })
+
+  it('has boolean feature toggles', () => {
+    expect(typeof config.features.comments).toBe('boolean')
+    expect(typeof config.features.githubOAuth).toBe('boolean')
+    expect(typeof config.features.rpg).toBe('boolean')
+  })
+
+  it('allows optional social links', () => {
+    expect(typeof config.social.github).toBe('string')
+    expect(typeof config.social.twitter).toBe('string')
+    expect(typeof config.social.website).toBe('string')
+  })
+
+  it('keeps githubOAuth dependent on comments in the default template profile', () => {
+    if (!config.features.comments) {
+      expect(config.features.githubOAuth).toBe(false)
+    } else {
+      expect(typeof config.features.githubOAuth).toBe('boolean')
+    }
   })
 })
 
@@ -47,26 +73,8 @@ describe('Theme Presets', () => {
     const p = themePresets[key]
     expect(['dark', 'light']).toContain(p.mode)
   })
-})
-
-describe('Rendered HTML via preview server', () => {
-  let html = ''
-
-  beforeAll(async () => {
-    const resp = await fetch('http://localhost:4321')
-    html = await resp.text()
-  })
-
-  it('renders site title in HTML', () => {
-    expect(html).toContain(`<title>${config.title}</title>`)
-  })
-
-  it('renders CSS custom property from selected preset', () => {
-    const preset = themePresets[config.theme.preset]
-    expect(html).toContain(`--color-primary: ${preset.colors.primary}`)
-  })
-
-  it('renders correct lang attribute', () => {
-    expect(html).toContain(`lang="${config.locale}"`)
+  it('has configurable CSP extension lists', () => {
+    expect(Array.isArray(config.security.csp.imgSrc)).toBe(true)
+    expect(Array.isArray(config.security.csp.scriptSrc)).toBe(true)
   })
 })
