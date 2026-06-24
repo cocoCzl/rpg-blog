@@ -153,7 +153,10 @@ async function main() {
       profile,
       locale,
     })
-    contentSummary = `Replaced content with ${contentResult.createdFile}`
+    const skippedSummary = contentResult.skippedFiles.length > 0
+      ? `; preserved ${contentResult.skippedFiles.length} existing post(s)`
+      : ''
+    contentSummary = `Replaced demo content with ${contentResult.createdFile}${skippedSummary}`
   }
 
   output.write('\nConfigured site.config.ts, .env, and data/uploads\n')

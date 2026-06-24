@@ -38,9 +38,12 @@ If you keep your own blog as a fork of this template, do not blindly overwrite y
 
 ```bash
 npm install
+npm run check
 npm test
 npm run build
 ```
+
+Run `npm run check:template` before publishing if the upgrade is being prepared for a live site.
 
 ## Files you usually own
 
@@ -53,6 +56,16 @@ These are usually project-specific after the initial fork:
 - deployment secrets in your platform
 
 Do not replace them wholesale unless you intend to reset your site branding or content.
+
+When a template update changes one of these files, merge the specific new option or schema requirement instead of copying the whole upstream file over your version.
+
+## Common conflict decisions
+
+- Keep your posts in `src/content/posts/` unless the release notes mention a required frontmatter migration.
+- Keep your RPG data in `data/rpg/` unless the release notes mention renamed keys or new required fields.
+- Keep your `site.config.ts` values, but copy new config fields from upstream when TypeScript or tests report missing properties.
+- Keep your production secrets outside Git. Only compare `.env.example` and `.env.production.example` for new variable names.
+- Prefer upstream changes for shared runtime files such as `src/lib/`, `src/pages/api/`, and `src/middleware.ts`, then re-apply any local behavior changes deliberately.
 
 ## When to update your content schema
 

@@ -1,6 +1,7 @@
-import { mkdir, readdir, rm, writeFile } from 'node:fs/promises'
+import { access, mkdir, readdir, rm, writeFile } from 'node:fs/promises'
+import { constants } from 'node:fs'
 
-const DEMO_POST_FILES = ['hello-world.md', 'getting-started.md']
+const DEMO_POST_FILES = ['hello-world.md', 'getting-started.md', 'hello-world.zh.md', 'getting-started.zh.md']
 
 export function normalizeContentMode(value) {
   const normalized = value.trim().toLowerCase()
@@ -89,6 +90,27 @@ Written by ${authorName}
 `
 }
 
+async function pathExists(path) {
+  try {
+    await access(path, constants.F_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function getAvailableMarkdownFilename(postsBase, preferredSlug) {
+  const preferredFile = `${preferredSlug}.md`
+  if (!(await pathExists(new URL(preferredFile, postsBase)))) return preferredFile
+
+  for (let index = 2; index < 100; index += 1) {
+    const candidate = `${preferredSlug}-${index}.md`
+    if (!(await pathExists(new URL(candidate, postsBase)))) return candidate
+  }
+
+  throw new Error(`Could not find an available starter post filename for ${preferredSlug}`)
+}
+
 export async function replaceDemoContent({
   postsDir,
   siteTitle,
@@ -100,18 +122,21 @@ export async function replaceDemoContent({
   const files = await readdir(postsDir)
   const markdownFiles = files.filter((file) => file.endsWith('.md'))
   const postsBase = postsDir.href.endsWith('/') ? postsDir.href : `${postsDir.href}/`
+  const demoFiles = DEMO_POST_FILES.filter((file) => markdownFiles.includes(file))
 
   await Promise.all(
-    markdownFiles.map((file) => rm(new URL(file, postsBase), { force: true }))
+    demoFiles.map((file) => rm(new URL(file, postsBase), { force: true }))
   )
 
   const preferredSlug = slugify(locale === 'zh' ? 'kai-shi-xie-zuo' : 'start-here')
+  const createdFile = await getAvailableMarkdownFilename(postsBase, preferredSlug)
   const starterPost = buildStarterPost({ siteTitle, authorName, profile, locale })
-  await writeFile(new URL(`${preferredSlug}.md`, postsBase), starterPost, 'utf8')
+  await writeFile(new URL(createdFile, postsBase), starterPost, 'utf8')
 
   return {
-    removedFiles: markdownFiles,
-    createdFile: `${preferredSlug}.md`,
-    removedDemoFiles: DEMO_POST_FILES.filter((file) => markdownFiles.includes(file)),
+    removedFiles: demoFiles,
+    skippedFiles: markdownFiles.filter((file) => !DEMO_POST_FILES.includes(file)),
+    createdFile,
+    removedDemoFiles: demoFiles,
   }
 }

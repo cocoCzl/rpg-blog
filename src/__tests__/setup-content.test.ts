@@ -1,4 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 describe('setup content helpers', () => {
   it('normalizes content mode values', async () => {
@@ -40,5 +44,53 @@ describe('setup content helpers', () => {
     expect(post).toContain('title: "开始写作"')
     expect(post).toContain('这是 我的博客 的第一篇文章。')
     expect(post).toContain('作者：作者')
+  })
+
+  it('replaces only known demo posts and preserves user markdown', async () => {
+    const { replaceDemoContent } = await import('../../scripts/setup-content.mjs')
+    const dir = await mkdtemp(join(tmpdir(), 'rpg-blog-posts-'))
+    const postsDir = pathToFileURL(`${dir}/`)
+
+    await writeFile(new URL('hello-world.md', postsDir), 'demo', 'utf8')
+    await writeFile(new URL('getting-started.zh.md', postsDir), 'demo zh', 'utf8')
+    await writeFile(new URL('my-draft.md', postsDir), 'keep me', 'utf8')
+
+    const result = await replaceDemoContent({
+      postsDir,
+      siteTitle: 'My Blog',
+      authorName: 'Alice',
+      profile: 'plain',
+      locale: 'en',
+    })
+
+    const files = await readdir(postsDir)
+    expect(files.sort()).toEqual(['my-draft.md', 'start-here.md'])
+    expect(await readFile(new URL('my-draft.md', postsDir), 'utf8')).toBe('keep me')
+    expect(result.removedFiles.sort()).toEqual(['getting-started.zh.md', 'hello-world.md'])
+    expect(result.skippedFiles).toEqual(['my-draft.md'])
+
+    await rm(dir, { recursive: true, force: true })
+  })
+
+  it('does not overwrite an existing starter post', async () => {
+    const { replaceDemoContent } = await import('../../scripts/setup-content.mjs')
+    const dir = await mkdtemp(join(tmpdir(), 'rpg-blog-posts-'))
+    const postsDir = pathToFileURL(`${dir}/`)
+
+    await writeFile(new URL('hello-world.md', postsDir), 'demo', 'utf8')
+    await writeFile(new URL('start-here.md', postsDir), 'existing post', 'utf8')
+
+    const result = await replaceDemoContent({
+      postsDir,
+      siteTitle: 'My Blog',
+      authorName: 'Alice',
+      profile: 'plain',
+      locale: 'en',
+    })
+
+    expect(result.createdFile).toBe('start-here-2.md')
+    expect(await readFile(new URL('start-here.md', postsDir), 'utf8')).toBe('existing post')
+
+    await rm(dir, { recursive: true, force: true })
   })
 })

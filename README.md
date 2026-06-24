@@ -24,6 +24,8 @@ This is an SSR template, not a static export. It is intended for users who want 
 
 ## Quick start
 
+If you are creating your own blog from this template, use GitHub's **Use this template** button first. Cloning also works:
+
 ```bash
 git clone https://github.com/YOUR_USERNAME/rpg-blog.git my-blog
 cd my-blog
@@ -40,6 +42,8 @@ It now starts with a template profile choice: `plain`, `comments`, `rpg`, or `ma
 At the end, it prints a profile-aware checklist for local review, OAuth setup, content cleanup, tests, and deployment.
 Social profile prompts can be left blank, and empty links stay hidden in the UI.
 The author avatar can also be left blank; author sections fall back to text-only layout.
+
+For a short customization path, see [CUSTOMIZATION.md](./CUSTOMIZATION.md).
 
 ## Configuration
 
@@ -283,14 +287,18 @@ Template contribution expectations live in [CONTRIBUTING.md](./CONTRIBUTING.md),
 ## Tests
 
 ```bash
+npm run check
 npm test
 npm run test:integration
 npm run test:all
+npm run check:template
 ```
 
+- `npm run check`: build plus fast unit coverage
 - `npm test`: fast unit coverage
 - `npm run test:integration`: starts the Astro dev server automatically, then runs HTTP-level tests
 - `npm run test:all`: both
+- `npm run check:template`: pre-publish checks for placeholders, demo posts, and production config
 
 ## CI
 

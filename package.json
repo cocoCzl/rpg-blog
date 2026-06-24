@@ -3,11 +3,33 @@
   "type": "module",
   "version": "0.3.0",
   "description": "A personal blog template with RPG gamification, built on Astro + Vue 3 + SQLite",
+  "keywords": [
+    "astro",
+    "blog-template",
+    "rpg",
+    "vue",
+    "sqlite",
+    "ssr"
+  ],
+  "homepage": "https://github.com/cocoCzl/rpg-blog#readme",
+  "bugs": {
+    "url": "https://github.com/cocoCzl/rpg-blog/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cocoCzl/rpg-blog.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "setup": "node scripts/setup.mjs",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "check": "npm run build && npm test",
+    "check:template": "node scripts/check-template.mjs",
     "test": "npm run test:unit",
     "test:unit": "vitest run src/__tests__/stores.test.ts src/__tests__/site-config.test.ts src/__tests__/template-helpers.test.ts src/__tests__/auth-helpers.test.ts src/__tests__/setup-profiles.test.ts src/__tests__/setup-content.test.ts src/__tests__/setup-checklist.test.ts",
     "test:integration": "node scripts/run-integration-tests.mjs",
