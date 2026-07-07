@@ -1,92 +1,53 @@
-# Customization Guide
+# Customization
 
-Use this path after you create a blog from the template.
+Customize `rpg-blog` through `site.config.ts`, Markdown/MDX Journal Entries, and optional static assets.
 
-## 1. Initialize
+## Identity
 
-```bash
-npm install
-cp .env.example .env
-npm run setup
-npm run dev
+Edit:
+
+- `title`: site name shown in Chinese and English UI
+- `description`: short public value line
+- `author.name`: Profile display name
+- `author.avatar`: optional replaceable avatar path
+- `author.bio`: Character Slot and Profile bio
+- `social`: links shown through the command surface
+
+## Guild Theme
+
+The first high-completion release ships one default theme:
+
+```ts
+theme: {
+  preset: 'guild',
+  backgroundImage: '',
+  effects: ['embers', 'mist'],
+}
 ```
 
-Open `http://localhost:4321`.
+`backgroundImage` is optional. The built-in atmospheric guild backdrop is included at `public/images/scenes/guild-hall.svg`.
 
-## 2. Pick a Profile
+Supported effects:
 
-- `plain`: articles, RSS, sitemap, uploads, and admin basics
-- `comments`: plain blog plus GitHub reader comments and moderation
-- `rpg`: comments plus the RPG dashboard and ambient presentation
-- `manual`: choose each feature toggle yourself
+- `embers`
+- `mist`
+- `stars`
 
-The same choices are stored in `site.config.ts` under `features`.
+## Content Language
 
-## 3. Edit Site Identity
+Public labels use the JRPG Guild Journal vocabulary:
 
-Change these fields in `site.config.ts`:
+- Posts are Journal Entries
+- Categories are Chapters
+- Tags are Clues
+- About is Profile
+- Toolbox is Inventory Toolkit
+- Featured is Quest Board
+- Latest is Recent Saves / Save Slots
 
-- `title`
-- `description`
-- `home.intro`
-- `author`
-- `social`
-- `theme.preset`
-- `locale`
+The UI can switch between Chinese and English labels, but Journal Entry content is single-language. Write entries in the language you want to publish.
 
-Blank avatar and social links are allowed. The UI hides empty links.
+## Inventory Toolkit
 
-## 4. Write Posts
+Set `display.showToolbox` to control whether the optional Inventory Toolkit appears. Toolkit items can represent projects, resources, links, or tools, but they should not imply real gameplay inventory state.
 
-Posts live in `src/content/posts/`.
-
-```md
----
-title: "My First Post"
-date: 2026-06-24
-tags: ["notes"]
-category: "Writing"
-summary: "Short preview text."
-draft: false
-featured: true
----
-
-Post body here.
-```
-
-Use `draft: true` to keep a post out of the homepage, pagination, RSS, sitemap, and article routes.
-
-## 5. Configure Comments
-
-For GitHub comments, create an OAuth app at <https://github.com/settings/developers>.
-
-- Homepage URL: your public site URL
-- Callback URL: `https://your-domain.com/api/auth/github/callback`
-
-Set these in `.env` locally and in your production secret store:
-
-```env
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
-```
-
-## 6. Customize RPG Data
-
-If RPG features are enabled, edit:
-
-- `data/rpg/skills.ts`
-- `data/rpg/equipment.ts`
-- `data/rpg/titles.ts`
-- `data/rpg/quests.ts`
-- `data/rpg/status-effects.ts`
-
-If you do not want RPG features, choose the `plain` or `comments` profile during setup.
-
-## 7. Check Before Publishing
-
-```bash
-npm run check
-npm run check:template
-```
-
-`npm run check:template` is intentionally strict. It fails when production placeholders, default site identity, or demo posts are still present.

@@ -1,5 +1,6 @@
-import { readFile, readdir } from 'node:fs/promises'
+import { readFile, readdir, stat } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 
 const checks = []
 
@@ -12,60 +13,97 @@ async function readIfExists(path) {
   return readFile(path, 'utf8')
 }
 
-const env = await readIfExists('.env')
-const siteConfig = await readIfExists('site.config.ts')
-const posts = existsSync('src/content/posts') ? await readdir('src/content/posts') : []
-
-addCheck('.env exists', Boolean(env), 'Run cp .env.example .env and npm run setup.')
-
-if (env) {
-  addCheck(
-    'SITE_URL is configured',
-    /^SITE_URL=(?!https:\/\/your-domain\.com)(?!http:\/\/localhost:4321$).+/m.test(env),
-    'Set SITE_URL to your public production URL before deployment.'
-  )
-  addCheck(
-    'admin password is not a placeholder',
-    !/^ADMIN_PASSWORD=(replace_with_a_long_random_password|change_me_immediately|your_admin_password)?$/m.test(env),
-    'Set ADMIN_PASSWORD to a strong value.'
-  )
-  addCheck(
-    'session secret is not a placeholder',
-    !/^SESSION_SECRET=(replace_with_a_long_random_session_secret|change_me_to_random_string|dev-secret-change-me)?$/m.test(env),
-    'Set SESSION_SECRET to a long random value.'
-  )
+async function listFiles(dir, predicate = () => true) {
+  if (!existsSync(dir)) return []
+  const entries = await readdir(dir, { withFileTypes: true })
+  const files = []
+  for (const entry of entries) {
+    const path = join(dir, entry.name)
+    if (entry.isDirectory()) files.push(...await listFiles(path, predicate))
+    if (entry.isFile() && predicate(path)) files.push(path)
+  }
+  return files
 }
 
+const publicDocs = [
+  'README.md',
+  'README.zh-CN.md',
+  'CUSTOMIZATION.md',
+  'DEPLOYMENT.md',
+  'UPGRADING.md',
+  'TEMPLATE_SCOPE.md',
+]
+
+const forbiddenPublicTerms = [
+  /ADMIN_PASSWORD/,
+  /SESSION_SECRET/,
+  /GitHub OAuth/i,
+  /SQLite/i,
+  /UPLOAD_PATH/,
+  /\/api\/comments/,
+  /\/api\/rpg/,
+  /data\/rpg/,
+  /components\/vue/,
+  /cozy-farm/i,
+  /homestead/i,
+  /seasonal farm/i,
+  /farm-(spring|autumn)/i,
+  /NES\.css/i,
+]
+
+const docsText = (await Promise.all(publicDocs.map(readIfExists))).join('\n')
 addCheck(
-  'site config exists',
-  Boolean(siteConfig),
-  'Keep site.config.ts as the primary customization entrypoint.'
+  'public docs describe the JRPG guild template',
+  docsText.includes('JRPG') && docsText.includes('Guild') && docsText.includes('Save Slots'),
+  'Public docs should sell the JRPG Guild Menu identity.'
+)
+addCheck(
+  'public docs do not present discarded farm or NES direction',
+  forbiddenPublicTerms.every((pattern) => !pattern.test(docsText)),
+  'Remove old backend/admin/farm/NES direction from public docs.'
 )
 
-if (siteConfig) {
-  addCheck(
-    'site title changed',
-    !siteConfig.includes("title: 'Starter Blog'"),
-    'Update title in site.config.ts.'
-  )
-  addCheck(
-    'author name changed',
-    !siteConfig.includes("name: 'Site Owner'"),
-    'Update author.name in site.config.ts.'
-  )
+const postFiles = await listFiles('src/content/posts', (path) => /\.(md|mdx)$/.test(path))
+const postText = (await Promise.all(postFiles.map(readIfExists))).join('\n')
+addCheck(
+  'default posts are Guild Sample Journal content',
+  /第一份委托|地图桌|道具栏|章节路线图|黄昏存档点/.test(postText),
+  'Default posts should demonstrate the Guild Sample Journal.'
+)
+addCheck(
+  'default posts avoid setup instructions and discarded farm vocabulary',
+  !/(setup|deploy|docker|site\.config|README|template profile|OAuth|SQLite|admin|农场|田地|播种|收获)/i.test(postText),
+  'Default posts should not teach setup or revive the farm direction.'
+)
+
+const requiredAssets = [
+  'public/images/scenes/guild-hall.svg',
+  'public/images/departure-cover.webp',
+  'public/images/build-log-cover.webp',
+  'public/images/toolbox-cover.webp',
+]
+
+for (const asset of requiredAssets) {
+  const ok = existsSync(asset) && (await stat(asset)).size > 0
+  addCheck(`asset exists: ${asset}`, ok, `Add a local static asset at ${asset}.`)
 }
 
-const demoPosts = posts.filter((post) => [
-  'hello-world.md',
-  'hello-world.zh.md',
-  'getting-started.md',
-  'getting-started.zh.md',
-].includes(post))
-
+const sourceFiles = await listFiles('src', (path) => /\.(astro|ts|tsx|js|mjs|vue)$/.test(path))
+const sourceText = (await Promise.all(sourceFiles.map(readIfExists))).join('\n')
 addCheck(
-  'demo posts removed or reviewed',
-  demoPosts.length === 0,
-  `Review or remove demo posts before publishing: ${demoPosts.join(', ')}`
+  'source has no removed runtime feature vocabulary',
+  !/(better-sqlite3|@astrojs\/node|@astrojs\/vue|pinia|SESSION_SECRET|UPLOAD_PATH|\/api\/rpg|\/api\/comments|admin\/login|showRpgFlavor|starfall|adventurer)/.test(sourceText),
+  'Remove stale runtime backend references from source files.'
+)
+addCheck(
+  'source uses guild homepage structure',
+  /Command Menu|command_menu|Quest Board|Save Slots|save-slot|Character Slot|profile-card/.test(sourceText),
+  'Homepage source should expose Command Menu, Character Slot, Quest Board, and Save Slots.'
+)
+addCheck(
+  'source rejects discarded farm and NES UI vocabulary',
+  !/(farm-entrance|pixel-farm|farm-place|farm-scene|nes-container|nes-btn|spring|autumn|petals|leaves)/i.test(sourceText),
+  'Remove discarded farm/NES UI terms from public source.'
 )
 
 let failed = 0

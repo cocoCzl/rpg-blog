@@ -2,51 +2,34 @@ import { getCollection } from 'astro:content'
 import type { APIRoute } from 'astro'
 import config from '../../site.config'
 import { escapeXml } from '../lib/utils'
-import { filterPostsByLocale, getPostLastModified, getPostUrl } from '../lib/posts'
-import { isRpgEnabled } from '../lib/features'
-
-const BASE_URL = config.siteUrl
+import { getAllTags, getPostLastModified, getPostUrl, getPublishedPosts } from '../lib/posts'
 
 export const GET: APIRoute = async () => {
-  const posts = await getCollection('posts')
-  const publishedPosts = filterPostsByLocale(posts, config.locale)
-  const urls = publishedPosts.map(p => `
-  <url>
-    <loc>${escapeXml(getPostUrl(p, BASE_URL))}</loc>
-    <lastmod>${getPostLastModified(p).toISOString().split('T')[0]}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>`).join('')
-
-  const totalPosts = publishedPosts.length
-  const totalPages = Math.ceil(totalPosts / config.postsPerPage)
-  const pageUrls = Array.from({ length: totalPages }, (_, i) => `
-  <url>
-    <loc>${escapeXml(BASE_URL)}/page/${i + 1}</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>`).join('')
-
-  const rpgUrl = isRpgEnabled() ? `
-  <url>
-    <loc>${escapeXml(BASE_URL)}/rpg</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-  </url>` : ''
-
+  const baseUrl = config.siteUrl.replace(/\/$/, '')
+  const posts = getPublishedPosts(await getCollection('posts'))
+  const staticPaths = ['/', '/about', '/archive', '/tags', '/feed.xml']
+  const postUrls = posts.map((post) => ({
+    loc: getPostUrl(post, baseUrl),
+    lastmod: getPostLastModified(post).toISOString().split('T')[0],
+  }))
+  const tagUrls = getAllTags(posts).map(({ tag }) => ({
+    loc: `${baseUrl}/tags/${encodeURIComponent(tag)}`,
+    lastmod: new Date().toISOString().split('T')[0],
+  }))
+  const urls = [
+    ...staticPaths.map((path) => ({ loc: `${baseUrl}${path}`, lastmod: new Date().toISOString().split('T')[0] })),
+    ...postUrls,
+    ...tagUrls,
+  ]
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${escapeXml(BASE_URL)}/</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>${rpgUrl}${urls}${pageUrls}
+${urls.map((url) => `  <url>
+    <loc>${escapeXml(url.loc)}</loc>
+    <lastmod>${url.lastmod}</lastmod>
+  </url>`).join('\n')}
 </urlset>`
 
   return new Response(xml, {
-    headers: {
-      'Content-Type': 'application/xml; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600',
-    },
+    headers: { 'Content-Type': 'application/xml; charset=utf-8' },
   })
 }

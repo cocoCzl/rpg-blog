@@ -1,191 +1,287 @@
-import { readFile, writeFile, access, mkdir } from 'node:fs/promises'
+import { access, readFile, writeFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { createInterface } from 'node:readline/promises'
 import { stdin as input, stdout as output } from 'node:process'
-import { randomBytes } from 'node:crypto'
-import { TEMPLATE_PROFILES, getTemplateProfileFeatures, needsGithubOAuth, normalizeTemplateProfile } from './setup-profiles.mjs'
-import { normalizeContentMode, replaceDemoContent } from './setup-content.mjs'
-import { buildPostSetupChecklist } from './setup-checklist.mjs'
+import { applyContentMode, normalizeContentMode } from './setup-content.mjs'
 
 const siteConfigPath = new URL('../site.config.ts', import.meta.url)
 const envExamplePath = new URL('../.env.example', import.meta.url)
 const envPath = new URL('../.env', import.meta.url)
-const uploadDirPath = new URL('../data/uploads', import.meta.url)
 const postsDirPath = new URL('../src/content/posts/', import.meta.url)
 
-const rl = createInterface({ input, output })
-const VALID_LOCALES = new Set(['en', 'zh'])
-const VALID_PRESETS = new Set(['ocean', 'forest', 'twilight'])
+export const VALID_LOCALES = ['zh', 'en']
+export const VALID_THEMES = ['guild']
+export const VALID_EFFECTS = ['embers', 'mist', 'stars']
+
+const defaults = {
+  siteUrl: 'http://localhost:4321',
+  titleZh: '企鹅工会',
+  titleEn: 'Penguin Guild',
+  descriptionZh: '一套像进入像素 RPG 公会菜单一样打开的个人博客模板。',
+  descriptionEn: 'A personal blog template that opens like a polished pixel RPG guild menu.',
+  introZh: '任务板显示置顶手札，存档栏收纳最近记录，指令菜单带你进入章节、线索和个人档案。',
+  introEn: 'The quest board highlights a pinned entry, save slots hold recent notes, and the command menu opens chapters, clues, and profile paths.',
+  authorZh: '未命名记录员',
+  authorEn: 'Unnamed Scribe',
+  bioZh: '在公会大厅、地图桌和道具栏之间整理见闻，把每次出发写成可以回看的冒险手札。',
+  bioEn: 'Collecting notes between the guild hall, map table, and inventory, then saving each departure as a journal entry.',
+  avatar: '',
+  github: '',
+  twitter: '',
+  website: '',
+  locale: 'zh',
+  theme: 'guild',
+  background: '',
+  effects: 'embers,mist',
+  showAbout: 'true',
+  showTags: 'true',
+  showArchive: 'true',
+  showToolbox: 'true',
+  content: 'keep',
+}
+
+function parseArgs(argv) {
+  const values = {}
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index]
+    if (!arg.startsWith('--')) continue
+    const raw = arg.slice(2)
+    const [key, inlineValue] = raw.split('=')
+    if (key === 'yes' || key === 'non-interactive') {
+      values.nonInteractive = 'true'
+      continue
+    }
+    values[key] = inlineValue ?? argv[index + 1] ?? ''
+    if (inlineValue === undefined && argv[index + 1] && !argv[index + 1].startsWith('--')) index += 1
+  }
+  return values
+}
 
 function escapeSingleQuoted(value) {
-  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+  return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'")
 }
 
-async function prompt(label, fallback) {
-  const value = await rl.question(`${label} [${fallback}]: `)
-  return value.trim() || fallback
+function normalizeChoice(value, allowed, fallback) {
+  const normalized = String(value || '').trim().toLowerCase()
+  return allowed.includes(normalized) ? normalized : fallback
 }
 
-async function promptOptional(label, fallback = '') {
-  const suffix = fallback ? ` [${fallback}]` : ' [leave blank to disable]'
-  const value = await rl.question(`${label}${suffix}: `)
-  return value.trim() || fallback
+function parseEffects(value) {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter((item) => VALID_EFFECTS.includes(item))
 }
 
-async function promptBoolean(label, fallback) {
-  const fallbackLabel = fallback ? 'y' : 'n'
-  const value = await rl.question(`${label} [${fallbackLabel}]: `)
-  if (!value.trim()) return fallback
-  return ['y', 'yes', 'true', '1'].includes(value.trim().toLowerCase())
+function parseBoolean(value, fallback = true) {
+  const normalized = String(value ?? '').trim().toLowerCase()
+  if (!normalized) return fallback
+  return ['1', 'true', 'yes', 'y', 'on'].includes(normalized)
 }
 
-async function promptTemplateProfile() {
-  output.write('\nTemplate profiles:\n')
-  output.write('  plain    - standard blog, no comments, no RPG\n')
-  output.write('  comments - blog with GitHub comments, no RPG\n')
-  output.write('  rpg      - blog with comments and RPG dashboard\n')
-  output.write('  manual   - choose feature toggles yourself\n\n')
-  const value = await rl.question('Template profile [rpg]: ')
-  return normalizeTemplateProfile(value || 'rpg')
-}
+async function promptForConfig(args) {
+  if (args.nonInteractive === 'true') return { ...defaults, ...args }
 
-async function promptContentMode() {
-  output.write('\nStarter content:\n')
-  output.write('  replace - remove demo posts and create one starter post for your site\n')
-  output.write('  keep    - keep the existing demo posts\n\n')
-  const value = await rl.question('Starter content mode [replace]: ')
-  return normalizeContentMode(value || 'replace')
+  const rl = createInterface({ input, output })
+  async function ask(key, label) {
+    const value = await rl.question(`${label} [${defaults[key]}]: `)
+    return value.trim() || defaults[key]
+  }
+
+  try {
+    output.write('\nrpg-blog Guild Setup Wizard\n')
+    output.write('Press Enter to keep the recommended default.\n\n')
+    return {
+      siteUrl: await ask('siteUrl', 'Site URL'),
+      titleZh: await ask('titleZh', 'Chinese site title'),
+      titleEn: await ask('titleEn', 'English UI site title'),
+      descriptionZh: await ask('descriptionZh', 'Chinese subtitle'),
+      descriptionEn: await ask('descriptionEn', 'English UI subtitle'),
+      introZh: await ask('introZh', 'Chinese homepage intro'),
+      introEn: await ask('introEn', 'English UI homepage intro'),
+      authorZh: await ask('authorZh', 'Chinese author name'),
+      authorEn: await ask('authorEn', 'English UI author name'),
+      bioZh: await ask('bioZh', 'Chinese author bio'),
+      bioEn: await ask('bioEn', 'English UI author bio'),
+      avatar: await ask('avatar', 'Author avatar path'),
+      github: await ask('github', 'GitHub social URL'),
+      twitter: await ask('twitter', 'Twitter/X social URL'),
+      website: await ask('website', 'Website social URL'),
+      locale: await ask('locale', 'Default UI locale (zh/en)'),
+      theme: await ask('theme', 'Guild theme (guild)'),
+      background: await ask('background', 'Optional custom background path'),
+      effects: await ask('effects', 'Atmospheric guild effects, comma separated'),
+      showAbout: await ask('showAbout', 'Show Profile (true/false)'),
+      showTags: await ask('showTags', 'Show clues page (true/false)'),
+      showArchive: await ask('showArchive', 'Show Journal Archive (true/false)'),
+      showToolbox: await ask('showToolbox', 'Show Inventory Toolkit (true/false)'),
+      content: await ask('content', 'Content mode (keep/starter/clear)'),
+    }
+  } finally {
+    rl.close()
+  }
 }
 
 async function ensureEnvFile() {
   try {
     await access(envPath, constants.F_OK)
   } catch {
-    const example = await readFile(envExamplePath, 'utf8')
-    await writeFile(envPath, example, 'utf8')
+    await writeFile(envPath, await readFile(envExamplePath, 'utf8'), 'utf8')
   }
 }
 
-function normalizeLocale(value) {
-  const normalized = value.trim().toLowerCase()
-  return VALID_LOCALES.has(normalized) ? normalized : 'en'
+function renderLocalized(zh, en) {
+  return `{\n    zh: '${escapeSingleQuoted(zh)}',\n    en: '${escapeSingleQuoted(en)}',\n  }`
 }
 
-function normalizePreset(value) {
-  const normalized = value.trim().toLowerCase()
-  return VALID_PRESETS.has(normalized) ? normalized : 'twilight'
-}
+export function buildSiteConfigSource(_current, rawConfig) {
+  const locale = normalizeChoice(rawConfig.locale, VALID_LOCALES, defaults.locale)
+  const theme = normalizeChoice(rawConfig.theme, VALID_THEMES, defaults.theme)
+  const effects = parseEffects(rawConfig.effects)
+  const contentMode = normalizeContentMode(rawConfig.content)
+  const background = rawConfig.background || ''
 
-function setOrAppendEnvValue(content, key, value) {
-  const line = `${key}=${value}`
-  if (new RegExp(`^${key}=.*$`, 'm').test(content)) {
-    return content.replace(new RegExp(`^${key}=.*$`, 'm'), line)
+  const config = {
+    ...rawConfig,
+    locale,
+    theme,
+    background,
+    effects: effects.length > 0 ? effects : ['embers', 'mist'],
+    showAbout: parseBoolean(rawConfig.showAbout, true),
+    showTags: parseBoolean(rawConfig.showTags, true),
+    showArchive: parseBoolean(rawConfig.showArchive, true),
+    showToolbox: parseBoolean(rawConfig.showToolbox, true),
+    contentMode,
   }
-  return `${content.replace(/\s*$/, '\n')}${line}\n`
+
+  const next = `import type { SiteConfig } from './src/lib/theme'
+
+const config: SiteConfig = {
+  siteUrl: process.env.SITE_URL || '${escapeSingleQuoted(config.siteUrl)}',
+  locale: '${config.locale}',
+  title: ${renderLocalized(config.titleZh, config.titleEn)},
+  description: ${renderLocalized(config.descriptionZh, config.descriptionEn)},
+  author: {
+    name: ${renderLocalized(config.authorZh, config.authorEn)},
+    avatar: '${escapeSingleQuoted(config.avatar)}',
+    bio: ${renderLocalized(config.bioZh, config.bioEn)},
+  },
+  social: {
+    github: '${escapeSingleQuoted(config.github)}',
+    twitter: '${escapeSingleQuoted(config.twitter)}',
+    website: '${escapeSingleQuoted(config.website)}',
+  },
+  home: {
+    intro: ${renderLocalized(config.introZh, config.introEn)},
+    focus: [
+      {
+        title: {
+          zh: '当前状态',
+          en: 'Current Status',
+        },
+        detail: {
+          zh: '整理新的冒险记录，打磨公会菜单的每个入口。',
+          en: 'Sorting new journal entries and polishing every guild menu route.',
+        },
+      },
+      {
+        title: {
+          zh: '章节路线',
+          en: 'Chapter Routes',
+        },
+        detail: {
+          zh: '技术、阅读、生活和项目被归入不同章节，方便回看。',
+          en: 'Technology, reading, life, and projects are grouped into readable chapters.',
+        },
+      },
+      {
+        title: {
+          zh: '下一份委托',
+          en: 'Next Commission',
+        },
+        detail: {
+          zh: '把道具栏里的方法、灵感和链接整理成下一篇手札。',
+          en: 'Turning inventory methods, ideas, and links into the next journal entry.',
+        },
+      },
+    ],
+    toolbox: [
+      {
+        title: {
+          zh: '羽笔与地图',
+          en: 'Quill And Map',
+        },
+        detail: {
+          zh: '记录草稿、复盘、路线图和发布节奏。',
+          en: 'Drafts, retrospectives, route maps, and publishing rhythms.',
+        },
+      },
+      {
+        title: {
+          zh: '工坊道具',
+          en: 'Workshop Items',
+        },
+        detail: {
+          zh: '存放正在打磨的作品、实验和可复用资源。',
+          en: 'Works, experiments, and reusable resources currently being refined.',
+        },
+      },
+    ],
+  },
+  theme: {
+    preset: '${config.theme}',
+    backgroundImage: '${escapeSingleQuoted(config.background)}',
+    effects: [${config.effects.map((effect) => `'${effect}'`).join(', ')}],
+  },
+  display: {
+    showAbout: ${config.showAbout},
+    showTags: ${config.showTags},
+    showArchive: ${config.showArchive},
+    showToolbox: ${config.showToolbox},
+  },
+  postsPerPage: 6,
+}
+
+export default config
+`
+
+  return { source: next, config }
 }
 
 async function main() {
-  const profile = await promptTemplateProfile()
-  const contentMode = await promptContentMode()
-  const siteTitle = await prompt('Site title', 'My Blog')
-  const description = await prompt('Description', 'A blog about code, worlds, and side quests.')
-  const homeIntro = await prompt('Homepage intro', 'Use this space for a short site introduction, publishing focus, or editorial note.')
-  const authorName = await prompt('Author name', 'Site Owner')
-  const authorAvatar = await promptOptional('Author avatar URL or path')
-  const authorBio = await prompt('Author bio', 'Write a short introduction so readers know what this site is about.')
-  const siteUrl = await prompt('Site URL', 'http://localhost:4321')
-  const locale = normalizeLocale(await prompt('Locale (en/zh)', 'en'))
-  const preset = normalizePreset(await prompt('Theme preset (ocean/forest/twilight)', 'twilight'))
-  const githubUrl = await promptOptional('GitHub profile URL')
-  const twitterUrl = await promptOptional('Twitter / X profile URL')
-  const websiteUrl = await promptOptional('Personal website URL')
-  const adminUsername = await prompt('Admin username', 'admin')
-  const adminPassword = await prompt('Admin password', randomBytes(18).toString('base64url'))
-  const profileFeatures = getTemplateProfileFeatures(profile)
-  const enableComments = profileFeatures ? profileFeatures.comments : await promptBoolean('Enable comments', true)
-  const enableGithubOAuth = profileFeatures
-    ? profileFeatures.githubOAuth
-    : enableComments
-      ? await promptBoolean('Enable GitHub OAuth comments', true)
-      : false
-  const enableRpg = profileFeatures ? profileFeatures.rpg : await promptBoolean('Enable RPG dashboard', true)
-  const sessionSecret = randomBytes(32).toString('base64url')
+  const args = parseArgs(process.argv.slice(2))
+  const rawConfig = await promptForConfig(args)
+  const current = await readFile(siteConfigPath, 'utf8')
+  const { source, config } = buildSiteConfigSource(current, rawConfig)
 
-  const siteConfig = await readFile(siteConfigPath, 'utf8')
-  const nextSiteConfig = siteConfig
-    .replace(/siteUrl: .*?\n/, `siteUrl: process.env.SITE_URL || '${escapeSingleQuoted(siteUrl)}',\n`)
-    .replace(/title: .*?\n/, `title: '${escapeSingleQuoted(siteTitle)}',\n`)
-    .replace(/description: .*?\n/, `description: '${escapeSingleQuoted(description)}',\n`)
-    .replace(/intro: .*?\n/, `intro: '${escapeSingleQuoted(homeIntro)}',\n`)
-    .replace(/name: .*?\n/, `name: '${escapeSingleQuoted(authorName)}',\n`)
-    .replace(/avatar: .*?\n/, `avatar: '${escapeSingleQuoted(authorAvatar)}',\n`)
-    .replace(/bio: .*?\n/, `bio: '${escapeSingleQuoted(authorBio)}',\n`)
-    .replace(/github: .*?\n/, `github: '${escapeSingleQuoted(githubUrl)}',\n`)
-    .replace(/twitter: .*?\n/, `twitter: '${escapeSingleQuoted(twitterUrl)}',\n`)
-    .replace(/website: .*?\n/, `website: '${escapeSingleQuoted(websiteUrl)}',\n`)
-    .replace(/preset: .*?\n/, `preset: '${escapeSingleQuoted(preset)}',\n`)
-    .replace(/locale: .*?\n/, `locale: '${escapeSingleQuoted(locale)}',\n`)
-    .replace(/comments: .*?\n/, `comments: ${enableComments},\n`)
-    .replace(/githubOAuth: .*?\n/, `githubOAuth: ${enableGithubOAuth},\n`)
-    .replace(/rpg: .*?\n/, `rpg: ${enableRpg},\n`)
-
-  await writeFile(siteConfigPath, nextSiteConfig, 'utf8')
+  await writeFile(siteConfigPath, source, 'utf8')
   await ensureEnvFile()
-  await mkdir(uploadDirPath, { recursive: true })
 
-  const envContent = await readFile(envPath, 'utf8')
-  let nextEnv = envContent
-  nextEnv = setOrAppendEnvValue(nextEnv, 'SITE_URL', siteUrl)
-  nextEnv = setOrAppendEnvValue(nextEnv, 'ADMIN_USERNAME', adminUsername)
-  nextEnv = setOrAppendEnvValue(nextEnv, 'ADMIN_PASSWORD', adminPassword)
-  nextEnv = setOrAppendEnvValue(nextEnv, 'SESSION_SECRET', sessionSecret)
-  nextEnv = setOrAppendEnvValue(nextEnv, 'UPLOAD_PATH', './data/uploads')
-  nextEnv = setOrAppendEnvValue(nextEnv, 'UPLOAD_URL_BASE', '/uploads')
-
+  const env = await readFile(envPath, 'utf8')
+  const nextEnv = /^SITE_URL=/m.test(env)
+    ? env.replace(/^SITE_URL=.*$/m, `SITE_URL=${config.siteUrl}`)
+    : `${env.replace(/\s*$/, '\n')}SITE_URL=${config.siteUrl}\n`
   await writeFile(envPath, nextEnv, 'utf8')
 
-  let contentSummary = 'Kept existing demo posts'
-  if (contentMode === 'replace') {
-    const contentResult = await replaceDemoContent({
-      postsDir: postsDirPath,
-      siteTitle,
-      authorName,
-      profile,
-      locale,
-    })
-    const skippedSummary = contentResult.skippedFiles.length > 0
-      ? `; preserved ${contentResult.skippedFiles.length} existing post(s)`
-      : ''
-    contentSummary = `Replaced demo content with ${contentResult.createdFile}${skippedSummary}`
-  }
+  const contentResult = await applyContentMode({
+    postsDir: postsDirPath,
+    siteTitle: config.titleZh,
+    authorName: config.authorZh,
+    mode: config.contentMode,
+  })
 
-  output.write('\nConfigured site.config.ts, .env, and data/uploads\n')
-  output.write(`Profile: ${TEMPLATE_PROFILES[profile].label}\n`)
-  output.write(`Features: comments=${enableComments}, githubOAuth=${enableGithubOAuth}, rpg=${enableRpg}\n`)
-  output.write(`Content: ${contentSummary}\n`)
-  if (needsGithubOAuth({ comments: enableComments, githubOAuth: enableGithubOAuth, rpg: enableRpg })) {
-    output.write('Reminder: set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in .env before enabling reader comments in production.\n')
-  }
-  output.write('\nNext steps:\n')
-  const checklist = buildPostSetupChecklist({
-    siteUrl,
-    contentMode,
-    features: {
-      comments: enableComments,
-      githubOAuth: enableGithubOAuth,
-      rpg: enableRpg,
-    },
-  })
-  checklist.forEach((item, index) => {
-    output.write(`${index + 1}. ${item}\n`)
-  })
+  output.write('\nGuild Setup Wizard complete.\n')
+  output.write(`Theme: ${config.theme}\n`)
+  output.write(`Effects: ${config.effects.join(', ') || 'none'}\n`)
+  output.write(`Content mode: ${contentResult.mode}\n`)
+  if (contentResult.createdFile) output.write(`Created: src/content/posts/${contentResult.createdFile}\n`)
+  if (contentResult.removedFiles.length > 0) output.write(`Removed posts: ${contentResult.removedFiles.join(', ')}\n`)
+  output.write('\nNext: run npm run dev locally, then npm run build before deployment.\n')
 }
 
-main()
-  .catch((error) => {
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((error) => {
     console.error(error)
     process.exitCode = 1
   })
-  .finally(() => {
-    rl.close()
-  })
+}

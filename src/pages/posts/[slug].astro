@@ -1,26 +1,27 @@
 ---
-import { getCollection } from 'astro:content'
+import { getCollection, render } from 'astro:content'
 import BaseLayout from '../../layouts/BaseLayout.astro'
-import CommentSection from '../../components/vue/CommentSection.vue'
 import config from '../../../site.config'
-import { isCommentsEnabled } from '../../lib/features'
 import { t } from '../../lib/i18n'
-import { getLocaleFromLocals } from '../../lib/locale'
-import { findPostBySlugAndLocale, getPostLastModified, getPostUrl } from '../../lib/posts'
+import { formatDate } from '../../lib/locale'
+import { findPostBySlug, getAdjacentPosts, getPostLastModified, getPostSlug, getPostUrl } from '../../lib/posts'
 import { getSiteText } from '../../lib/site-text'
 
-const locale = getLocaleFromLocals(Astro.locals)
+export async function getStaticPaths() {
+  const posts = await getCollection('posts')
+  return posts.filter((post) => post.data.draft !== true).map((post) => ({
+    params: { slug: getPostSlug(post) },
+  }))
+}
+
+const locale = config.locale
 const siteText = getSiteText(config, locale)
 const { slug } = Astro.params
 const posts = await getCollection('posts')
-const post = slug ? findPostBySlugAndLocale(posts, slug, locale) : undefined
-if (!post) {
-  Astro.response.status = 404
-}
-if (!post) {
-  throw new Error(`Post not found: ${slug}`)
-}
-const { Content } = await post.render()
+const post = slug ? findPostBySlug(posts, slug) : undefined
+if (!post) throw new Error(`Post not found: ${slug}`)
+const adjacent = getAdjacentPosts(posts, post)
+const { Content } = await render(post)
 ---
 
 <BaseLayout
@@ -37,96 +38,60 @@ const { Content } = await post.render()
     datePublished: post.data.date.toISOString(),
     dateModified: getPostLastModified(post).toISOString(),
     author: { '@type': 'Person', name: siteText.authorName },
-    image: post.data.cover ? `${config.siteUrl}${post.data.cover}` : undefined,
+    image: post.data.cover ? `${config.siteUrl.replace(/\/$/, '')}${post.data.cover}` : undefined,
     url: getPostUrl(post, config.siteUrl),
   }}
 >
-  <main class="min-h-screen" style="background: linear-gradient(to bottom right, var(--color-bg), var(--color-surface))">
-    <article class="max-w-3xl mx-auto px-4 py-16">
-      <header class="mb-10 space-y-4">
-        <div class="flex flex-wrap items-center gap-3 text-sm" style="color: var(--color-text-secondary)">
-          <time datetime={post.data.date.toISOString()}>
-            {post.data.date.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-          </time>
-          {post.data.category && <span>{post.data.category}</span>}
-          {post.data.tags.length > 0 && (
-            <span class="flex gap-1.5">
-              {post.data.tags.map(tag => (
-                <span class="px-2 py-0.5 rounded-full text-xs" style="background: var(--color-primary); color: var(--color-bg)">
-                  {tag}
-                </span>
-              ))}
-            </span>
-          )}
-        </div>
-
-        <h1 class="text-3xl md:text-4xl font-bold leading-tight" style="font-family: var(--font-heading)">
-          {post.data.title}
-        </h1>
-
-        {post.data.summary && (
-          <p class="text-lg" style="color: var(--color-text-secondary)">
-            {post.data.summary}
-          </p>
-        )}
-      </header>
-
-      {post.data.cover && (
-        <div class="w-full mb-10 overflow-hidden rounded-xl">
-          <img
-            src={post.data.cover}
-            alt={post.data.title}
-            class="w-full object-cover max-h-96"
-            loading="eager"
-          />
-        </div>
-      )}
-
-      <div class="prose prose-lg max-w-none prose-headings:font-[var(--font-heading)] prose-a:text-[var(--color-primary)] prose-code:text-[var(--color-accent)] prose-pre:bg-[var(--color-surface)]" style="color: var(--color-text)">
-        <Content />
+  <article class="container journal-shell">
+    <header class="guild-panel panel-pad journal-cover">
+      <div class="post-meta">
+        <span data-i18n="home.journal">{t('home.journal', locale)}</span>
+        <time datetime={post.data.date.toISOString()}>{t('blog.published', locale)} {formatDate(post.data.date, locale)}</time>
+        {post.data.updated && <span>{t('blog.updated', locale)} {formatDate(post.data.updated, locale)}</span>}
+        {post.data.category && <span>{t('blog.category', locale)}: {post.data.category}</span>}
       </div>
-
-      <div class="mt-16 pt-8 text-sm" style="border-top: 1px solid var(--color-crystal-border, rgba(255,255,255,0.1)); color: var(--color-text-secondary)">
-        <a href="/" class="hover:underline">&larr; {t('blog.back_home', locale)}</a>
-      </div>
-
-      {isCommentsEnabled() && (
-        <div class="mt-12">
-          <CommentSection articleSlug={post.slug} locale={locale} client:load />
+      <h1 class="hero-title" style="font-size: clamp(2.6rem, 6vw, 4.8rem);">{post.data.title}</h1>
+      <p class="hero-copy">{post.data.summary}</p>
+      {post.data.tags.length > 0 && (
+        <div class="tag-list">
+          {post.data.tags.map((tag) => <a class="badge" href={`/tags/${encodeURIComponent(tag)}`}>#{tag}</a>)}
         </div>
       )}
-      {!isCommentsEnabled() && (
-        <aside class="mt-12 glass-card p-6 space-y-4">
-          <h2 class="text-lg font-bold" style="font-family: var(--font-heading); color: var(--color-text)">
-            {t('blog.about_post', locale)}
-          </h2>
-          <div class="flex items-center gap-3">
-            {config.author.avatar && (
-              <img
-                src={config.author.avatar}
-                alt={siteText.authorName}
-                class="w-12 h-12 rounded-full object-cover"
-                loading="lazy"
-              />
-            )}
-            <p class="text-sm" style="color: var(--color-text-secondary)">
-              {t('blog.written_by', locale)} {siteText.authorName}
-            </p>
-          </div>
-          <p class="text-sm leading-relaxed" style="color: var(--color-text-secondary)">
-            {siteText.authorBio}
-          </p>
-          {post.data.tags.length > 0 && (
-            <div class="flex flex-wrap gap-2">
-              {post.data.tags.map(tag => (
-                <span class="px-2 py-1 rounded-full text-xs" style="background: var(--color-surface); color: var(--color-text-secondary)">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </aside>
-      )}
-    </article>
-  </main>
+    </header>
+
+    {post.data.cover ? (
+      <img src={post.data.cover} alt="" class="optional-cover" loading="eager" />
+    ) : (
+      <div class="no-cover-mark" aria-hidden="true">{post.data.category || t('home.journal', locale)}</div>
+    )}
+
+    <div class="guild-panel journal-paper prose-content">
+      <Content />
+    </div>
+
+    <nav class="guild-grid" style="margin-top: 1.25rem;">
+      <div class="guild-panel panel-pad">
+        {adjacent.previous ? (
+          <a href={`/posts/${getPostSlug(adjacent.previous)}`} style="text-decoration: none;">
+            <span class="eyebrow" data-i18n="blog.previous">{t('blog.previous', locale)}</span>
+            <h2 class="post-title">{adjacent.previous.data.title}</h2>
+          </a>
+        ) : <span class="post-summary"> </span>}
+      </div>
+      <div class="guild-panel panel-pad">
+        {adjacent.next ? (
+          <a href={`/posts/${getPostSlug(adjacent.next)}`} style="text-decoration: none;">
+            <span class="eyebrow" data-i18n="blog.next">{t('blog.next', locale)}</span>
+            <h2 class="post-title">{adjacent.next.data.title}</h2>
+          </a>
+        ) : <span class="post-summary"> </span>}
+      </div>
+    </nav>
+
+    <aside class="guild-panel panel-pad" style="margin-top: 1.25rem;">
+      <p class="eyebrow" data-i18n="blog.about_post">{t('blog.about_post', locale)}</p>
+      <h2 class="post-title"><span data-i18n="blog.written_by">{t('blog.written_by', locale)}</span> <span data-author-name>{siteText.authorName}</span></h2>
+      <p class="post-summary" data-author-bio>{siteText.authorBio}</p>
+    </aside>
+  </article>
 </BaseLayout>

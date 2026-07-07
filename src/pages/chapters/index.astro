@@ -1,0 +1,30 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import config from '../../../site.config'
+import { t } from '../../lib/i18n'
+import { getAllCategories } from '../../lib/posts'
+
+const locale = config.locale
+const chapters = getAllCategories(await getCollection('posts'))
+---
+
+<BaseLayout title={t('home.regions', locale)} description={t('archive.description', locale)}>
+  <section class="hero">
+    <div class="container">
+      <p class="eyebrow" data-i18n="home.regions">{t('home.regions', locale)}</p>
+      <h1 class="hero-title" data-i18n="home.regions">{t('home.regions', locale)}</h1>
+      <p class="hero-copy" data-i18n="archive.description">{t('archive.description', locale)}</p>
+    </div>
+  </section>
+
+  <section class="container retro-index-grid" aria-label={t('home.regions', locale)}>
+    {chapters.map(({ category, count }) => (
+      <a class="pixel-card chapter-card" href={`/chapters/${encodeURIComponent(category)}`}>
+        <p class="eyebrow">{count} {t('home.journal_entry', locale)}</p>
+        <h2 class="post-title">{category}</h2>
+      </a>
+    ))}
+  </section>
+</BaseLayout>
+

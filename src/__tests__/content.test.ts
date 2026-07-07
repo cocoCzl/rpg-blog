@@ -1,48 +1,82 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import {
+  findPostBySlug,
+  getAllCategories,
+  getAdjacentPosts,
+  getAllTags,
+  getPostSlug,
+  getPostsByTag,
+  getPostsByCategory,
+  getPublishedPosts,
+  groupPostsByYear,
+} from '../lib/posts'
 
-import config from '../../site.config'
-import { BASE } from './test-base'
+function post(id: string, data: Record<string, unknown>) {
+  return {
+    id,
+    data: {
+      title: id,
+      date: new Date('2026-01-01'),
+      summary: 'summary',
+      tags: [],
+      draft: false,
+      featured: false,
+      ...data,
+    },
+  } as any
+}
 
-describe('Article Content Collections', () => {
-  let homeHtml = ''
-  let helloHtml = ''
-  let gettingStartedHtml = ''
+describe('post helpers', () => {
+  const posts = [
+    post('guild-first-commission.md', { date: new Date('2026-03-21'), tags: ['写作', '公会'], category: '启程章节', featured: true }),
+    post('inventory-writing-rhythm.md', { date: new Date('2026-03-12'), tags: ['道具栏', '复盘'], category: '工坊章节' }),
+    post('draft.md', { date: new Date('2026-03-01'), tags: ['隐藏'], category: '隐藏章节', draft: true }),
+  ]
 
-  beforeAll(async () => {
-    const [home, hello, gs] = await Promise.all([
-      fetch(`${BASE}/`).then(r => r.text()),
-      fetch(`${BASE}/posts/hello-world`).then(r => r.text()),
-      fetch(`${BASE}/posts/getting-started`).then(r => r.text()),
+  it('uses the file id as the public slug', () => {
+    expect(getPostSlug(posts[0])).toBe('guild-first-commission')
+  })
+
+  it('filters drafts and sorts newest first', () => {
+    expect(getPublishedPosts(posts).map(getPostSlug)).toEqual(['guild-first-commission', 'inventory-writing-rhythm'])
+  })
+
+  it('finds only published posts by slug', () => {
+    expect(findPostBySlug(posts, 'guild-first-commission')?.data.featured).toBe(true)
+    expect(findPostBySlug(posts, 'draft')).toBeUndefined()
+  })
+
+  it('collects tags from published posts only', () => {
+    expect(getAllTags(posts)).toEqual([
+      { tag: '公会', count: 1 },
+      { tag: '写作', count: 1 },
+      { tag: '复盘', count: 1 },
+      { tag: '道具栏', count: 1 },
     ])
-    homeHtml = home
-    helloHtml = hello
-    gettingStartedHtml = gs
   })
 
-  it('homepage lists articles', () => {
-    expect(homeHtml).toContain('Hello World')
-    expect(homeHtml).toContain('Getting Started with the Blog Template')
+  it('collects categories from published posts only', () => {
+    expect(getAllCategories(posts)).toEqual([
+      { category: '启程章节', count: 1 },
+      { category: '工坊章节', count: 1 },
+    ])
   })
 
-  it('article page renders title', () => {
-    expect(helloHtml).toContain('<h1')
-    expect(helloHtml).toContain('Hello World')
+  it('filters posts by tag without drafts', () => {
+    expect(getPostsByTag(posts, '隐藏')).toEqual([])
+    expect(getPostsByTag(posts, '道具栏').map(getPostSlug)).toEqual(['inventory-writing-rhythm'])
   })
 
-  it('article page renders markdown content', () => {
-    expect(helloHtml).toContain('Welcome')
-    expect(helloHtml).toContain('Happy blogging!')
+  it('filters posts by category without drafts', () => {
+    expect(getPostsByCategory(posts, '隐藏章节')).toEqual([])
+    expect(getPostsByCategory(posts, '工坊章节').map(getPostSlug)).toEqual(['inventory-writing-rhythm'])
   })
 
-  it('article page shows tags', () => {
-    expect(helloHtml).toContain('general')
+  it('groups published posts by year', () => {
+    expect(groupPostsByYear(posts)).toEqual([{ year: '2026', posts: [posts[0], posts[1]] }])
   })
 
-  it('article page shows date', () => {
-    expect(helloHtml).toContain('2026')
-  })
-
-  it('article page has back link', () => {
-    expect(helloHtml).toContain(config.locale === 'zh' ? '返回首页' : 'Back to home')
+  it('returns previous and next posts by date order', () => {
+    expect(getAdjacentPosts(posts, posts[1])).toEqual({ previous: undefined, next: posts[0] })
   })
 })

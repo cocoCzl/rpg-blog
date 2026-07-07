@@ -1,33 +1,17 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
+
 COPY package.json package-lock.json ./
 RUN npm ci
+
 COPY . .
 RUN npm run build
-RUN npm prune --production
 
-FROM node:22-alpine
-WORKDIR /app
+FROM nginx:1.27-alpine
 
-RUN apk add --no-cache wget
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-RUN addgroup -S app && adduser -S app -G app
+EXPOSE 80
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-
-RUN mkdir -p /app/storage/uploads && chown -R app:app /app
-
-USER app
-
-ENV HOST=0.0.0.0
-ENV PORT=4321
-ENV NODE_ENV=production
-
-EXPOSE 4321
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
-    CMD wget -qO- http://localhost:4321/ || exit 1
-
-CMD ["node", "dist/server/entry.mjs"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost/ || exit 1

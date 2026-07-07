@@ -4,20 +4,6 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: rpg-blog
-    env_file:
-      - .env
-    environment:
-      HOST: 0.0.0.0
-      PORT: 4321
-      NODE_ENV: production
-      SQLITE_PATH: /app/storage/rpg-blog.db
-      UPLOAD_PATH: /app/storage/uploads
-      UPLOAD_URL_BASE: /uploads
     ports:
-      - "4321:4321"
-    volumes:
-      - app_storage:/app/storage
+      - "4321:80"
     restart: unless-stopped
-
-volumes:
-  app_storage:

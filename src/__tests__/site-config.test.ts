@@ -1,80 +1,47 @@
-import { describe, it, expect } from 'vitest'
+import { existsSync } from 'node:fs'
+import { describe, expect, it } from 'vitest'
 import config from '../../site.config'
-import { themePresets } from '../lib/theme'
+import { AMBIANCE_EFFECTS, SUPPORTED_LOCALES, THEME_PRESETS, themePresets } from '../lib/theme'
 
-describe('Site Config', () => {
-  it('has valid title', () => {
-    expect(config.title).toBeTruthy()
-    expect(typeof config.title).toBe('string')
+describe('site config', () => {
+  it('ships with the default v1 identity', () => {
+    expect(config.title.zh).toBe('企鹅工会')
+    expect(config.title.en).toBe('Penguin Guild')
+    expect(config.author.name.zh).toBe('未命名记录员')
+    expect(config.author.name.en).toBe('Unnamed Scribe')
   })
 
-  it('has homepage intro copy', () => {
-    expect(config.home.intro).toBeTruthy()
-    expect(typeof config.home.intro).toBe('string')
+  it('uses supported locale, theme, and ambiance effects', () => {
+    expect(SUPPORTED_LOCALES).toContain(config.locale)
+    expect(THEME_PRESETS).toContain(config.theme.preset)
+    expect(config.theme.effects.every((effect) => AMBIANCE_EFFECTS.includes(effect))).toBe(true)
   })
 
-  it('has valid author', () => {
-    expect(config.author.name).toBeTruthy()
-    expect(typeof config.author.avatar).toBe('string')
-  })
-
-  it('theme preset exists in presets', () => {
-    const preset = themePresets[config.theme.preset]
-    expect(preset).toBeDefined()
-    expect(preset.colors.primary).toBeTruthy()
-  })
-
-  it('has valid locale', () => {
-    expect(['zh', 'en']).toContain(config.locale)
-  })
-
-  it('has positive postsPerPage', () => {
-    expect(config.postsPerPage).toBeGreaterThan(0)
-  })
-
-  it('has boolean feature toggles', () => {
-    expect(typeof config.features.comments).toBe('boolean')
-    expect(typeof config.features.githubOAuth).toBe('boolean')
-    expect(typeof config.features.rpg).toBe('boolean')
-  })
-
-  it('allows optional social links', () => {
-    expect(typeof config.social.github).toBe('string')
-    expect(typeof config.social.twitter).toBe('string')
-    expect(typeof config.social.website).toBe('string')
-  })
-
-  it('keeps githubOAuth dependent on comments in the default template profile', () => {
-    if (!config.features.comments) {
-      expect(config.features.githubOAuth).toBe(false)
-    } else {
-      expect(typeof config.features.githubOAuth).toBe('boolean')
+  it('has the single guild theme preset', () => {
+    expect(Object.keys(themePresets)).toEqual(['guild'])
+    for (const key of THEME_PRESETS) {
+      const preset = themePresets[key]
+      expect(preset.primary).toBeTruthy()
+      expect(preset.secondary).toBeTruthy()
+      expect(preset.accent).toBeTruthy()
+      expect(preset.sceneImage).toBe('/images/scenes/guild-hall.svg')
+      expect(existsSync(`public${preset.sceneImage}`)).toBe(true)
     }
   })
-})
 
-describe('Theme Presets', () => {
-  it('has all three presets', () => {
-    expect(Object.keys(themePresets)).toEqual(['ocean', 'forest', 'twilight'])
+  it('does not require a background image for the built-in pixel scene', () => {
+    expect(config.theme.backgroundImage).toBe('')
   })
 
-  it.each(['ocean', 'forest', 'twilight'])('%s preset has required colors', (key) => {
-    const p = themePresets[key]
-    expect(p.colors.primary).toBeTruthy()
-    expect(p.colors.secondary).toBeTruthy()
-    expect(p.colors.accent).toBeTruthy()
-    expect(p.colors.background).toBeTruthy()
-    expect(p.colors.surface).toBeTruthy()
-    expect(p.colors.text).toBeTruthy()
-    expect(p.colors.textSecondary).toBeTruthy()
+  it('keeps display modules explicit', () => {
+    expect(typeof config.display.showAbout).toBe('boolean')
+    expect(typeof config.display.showTags).toBe('boolean')
+    expect(typeof config.display.showArchive).toBe('boolean')
+    expect(typeof config.display.showToolbox).toBe('boolean')
   })
 
-  it.each(['ocean', 'forest', 'twilight'])('%s preset has valid mode', (key) => {
-    const p = themePresets[key]
-    expect(['dark', 'light']).toContain(p.mode)
-  })
-  it('has configurable CSP extension lists', () => {
-    expect(Array.isArray(config.security.csp.imgSrc)).toBe(true)
-    expect(Array.isArray(config.security.csp.scriptSrc)).toBe(true)
+  it('does not expose removed backend feature flags', () => {
+    expect('features' in config).toBe(false)
+    expect('comments' in config).toBe(false)
   })
 })

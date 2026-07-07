@@ -1,14 +1,13 @@
 import type { SiteConfig } from './theme'
 import type { SupportedLocale } from './locale'
+import { localized } from './locale'
 
 export function getSiteText(config: SiteConfig, locale: SupportedLocale) {
-  const localized = config.i18n?.[locale]
-
   return {
-    title: localized?.title || config.title,
-    description: localized?.description || config.description,
-    homeIntro: localized?.homeIntro || config.home.intro,
-    authorName: localized?.authorName || config.author.name,
-    authorBio: localized?.authorBio || config.author.bio,
+    title: localized(config.title, locale),
+    description: localized(config.description, locale),
+    homeIntro: localized(config.home.intro, locale),
+    authorName: localized(config.author.name, locale),
+    authorBio: localized(config.author.bio, locale),
   }
 }

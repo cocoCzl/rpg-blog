@@ -1,43 +1,10 @@
 ---
 import '../styles/global.css'
 import config from '../../site.config'
-import { themePresets } from '../lib/theme'
-import { isConfigured } from '../lib/github-oauth'
-import { loadLocale } from '../lib/i18n'
-import { isGithubAuthEnabled, isRpgEnabled } from '../lib/features'
-import { buildLocaleSwitchHref, getLocaleFromLocals } from '../lib/locale'
+import { t } from '../lib/i18n'
+import { formatDate, localized, resolveLocale, type SupportedLocale } from '../lib/locale'
 import { getSiteText } from '../lib/site-text'
-import BackgroundSwitcher from '../components/vue/BackgroundSwitcher.vue'
-import GlassNavbar from '../components/vue/GlassNavbar.vue'
-import GlassFooter from '../components/vue/GlassFooter.vue'
-import GithubLoginButton from '../components/vue/GithubLoginButton.vue'
-import SakuraEffect from '../components/vue/SakuraEffect.vue'
-import AuroraEffect from '../components/vue/AuroraEffect.vue'
-import ToastContainer from '../components/vue/ToastContainer.vue'
-
-const currentLocale = getLocaleFromLocals(Astro.locals)
-await loadLocale(currentLocale)
-const siteText = getSiteText(config, currentLocale)
-
-const preset = themePresets[config.theme.preset]
-const c = preset.colors
-
-const cssVars = `:root {
-  --color-primary: ${c.primary};
-  --color-secondary: ${c.secondary};
-  --color-accent: ${c.accent};
-  --color-bg: ${c.background};
-  --color-surface: ${c.surface};
-  --color-text: ${c.text};
-  --color-text-secondary: ${c.textSecondary};
-  --font-heading: ${preset.fontFamily.heading};
-  --font-body: ${preset.fontFamily.body};
-  --font-mono: ${preset.fontFamily.mono};
-  --font-scale: ${preset.fontScale};
-  --color-success: #10B981;
-  --color-error: #EF4444;
-  --color-warning: #F59E0B;
-}`
+import { themePresets } from '../lib/theme'
 
 export interface Props {
   title?: string
@@ -49,87 +16,212 @@ export interface Props {
   jsonLd?: object
 }
 
-const pageTitle = Astro.props.title
-  ? `${Astro.props.title} - ${siteText.title}`
-  : siteText.title
+const locale = resolveLocale(config.locale)
+const siteText = getSiteText(config, locale)
+const preset = themePresets[config.theme.preset]
+const pageTitle = Astro.props.title ? `${Astro.props.title} - ${siteText.title}` : siteText.title
 const pageDesc = Astro.props.description || siteText.description
-const canonicalUrl = Astro.props.canonicalUrl || config.siteUrl + (Astro.url.pathname !== '/' ? Astro.url.pathname : '')
-const ogImage = Astro.props.ogImage || `${config.siteUrl}/og-image?slug=${encodeURIComponent(Astro.props.title || '')}`
+const canonicalUrl = Astro.props.canonicalUrl || `${config.siteUrl.replace(/\/$/, '')}${Astro.url.pathname !== '/' ? Astro.url.pathname : ''}`
+const ogImage = Astro.props.ogImage || `${config.siteUrl.replace(/\/$/, '')}/og-image?title=${encodeURIComponent(Astro.props.title || siteText.title)}`
 const jsonLdStr = Astro.props.jsonLd ? JSON.stringify(Astro.props.jsonLd) : ''
-const showGithubLogin = isGithubAuthEnabled() && isConfigured()
-const showRpgNav = isRpgEnabled()
-const showRpgEffects = isRpgEnabled()
-const switchLocale = currentLocale === 'zh' ? 'en' : 'zh'
-const localeSwitchHref = buildLocaleSwitchHref(
-  switchLocale,
-  `${Astro.url.pathname}${Astro.url.search}${Astro.url.hash}`
-)
-const localeSwitchLabel = currentLocale === 'zh' ? 'EN' : '中文'
+const backgroundImage = config.theme.backgroundImage ? `url('${config.theme.backgroundImage}')` : 'none'
+const cssVars = `:root {
+  --color-bg: ${preset.background};
+  --color-surface: ${preset.surface};
+  --color-surface-strong: ${preset.surfaceStrong};
+  --color-border: ${preset.border};
+  --color-text: ${preset.text};
+  --color-text-secondary: ${preset.textSecondary};
+  --color-primary: ${preset.primary};
+  --color-secondary: ${preset.secondary};
+  --color-accent: ${preset.accent};
+  --color-muted: ${preset.muted};
+  --shadow-card: ${preset.shadow};
+  --font-heading: ${preset.heading};
+  --font-body: ${preset.body};
+  --font-mono: ${preset.mono};
+  --background-image: ${backgroundImage};
+  --scene-image: url('${preset.sceneImage}');
+}`
+const navItems = [
+  { href: '/', key: 'nav.home' },
+  { href: '/archive', key: 'nav.archive' },
+  { href: '/tags', key: 'nav.tags' },
+  { href: '/about', key: 'nav.about' },
+]
+const translations = {
+  zh: {
+    siteTitle: localized(config.title, 'zh'),
+    siteDescription: localized(config.description, 'zh'),
+    authorName: localized(config.author.name, 'zh'),
+    authorBio: localized(config.author.bio, 'zh'),
+    ...flattenTranslations('zh'),
+  },
+  en: {
+    siteTitle: localized(config.title, 'en'),
+    siteDescription: localized(config.description, 'en'),
+    authorName: localized(config.author.name, 'en'),
+    authorBio: localized(config.author.bio, 'en'),
+    ...flattenTranslations('en'),
+  },
+}
+
+function flattenTranslations(activeLocale: SupportedLocale) {
+  const keys = [
+    'nav.home', 'nav.archive', 'nav.tags', 'nav.about', 'nav.language', 'nav.posts',
+    'home.command_menu', 'home.guild_interface', 'home.guild_interface_hint', 'home.featured', 'home.latest', 'home.about',
+    'home.regions', 'home.mailbox', 'home.rss_feed', 'home.toolbox', 'home.signpost', 'home.clues', 'home.journal',
+    'home.journal_entry', 'home.quest_log', 'home.read_more', 'home.continue', 'home.profile', 'home.status', 'home.slot_empty',
+    'blog.back_home', 'blog.previous', 'blog.next', 'blog.written_by', 'blog.about_post',
+    'blog.published', 'blog.updated', 'blog.category', 'blog.tags',
+    'archive.title', 'archive.description',
+    'tags.title', 'tags.description', 'tags.posts_with_tag',
+    'about.title', 'about.focus', 'about.quest_log', 'about.social', 'about.no_social',
+    'system.skip_to_content',
+  ]
+  return Object.fromEntries(keys.map((key) => [key, t(key, activeLocale)]))
+}
 ---
 
 <!doctype html>
-<html lang={currentLocale} class={preset.mode}>
+<html lang={locale} class={preset.mode}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={pageDesc} />
     <title>{pageTitle}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
-    <link rel="icon" type="image/png" href="/favicon.svg" />
     <link rel="canonical" href={canonicalUrl} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700;800&family=Cinzel:wght@700;800&family=Press+Start+2P&display=swap" rel="stylesheet" />
     <meta name="author" content={siteText.authorName} />
-    <meta property="og:locale" content={currentLocale === 'zh' ? 'zh_CN' : 'en_US'} />
+    <meta property="og:locale" content={locale === 'zh' ? 'zh_CN' : 'en_US'} />
     <meta property="og:site_name" content={siteText.title} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDesc} />
     <meta property="og:type" content={Astro.props.ogType || 'website'} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:url" content={canonicalUrl} />
-    {
-      Astro.props.ogType === 'article' && Astro.props.articleDate ? (
-        <meta property="article:published_time" content={Astro.props.articleDate} />
-      ) : null
-    }
+    {Astro.props.ogType === 'article' && Astro.props.articleDate ? <meta property="article:published_time" content={Astro.props.articleDate} /> : null}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDesc} />
     <meta name="twitter:image" content={ogImage} />
-    {
-      Astro.url.pathname === '/admin' || Astro.url.pathname.startsWith('/admin/') ? (
-        <meta name="robots" content="noindex, nofollow" />
-      ) : null
-    }
     {jsonLdStr ? <script type="application/ld+json" set:html={jsonLdStr} /> : null}
     <style is:inline set:html={cssVars} />
   </head>
-  <body style={`font-family: var(--font-body); background-color: var(--color-bg); color: var(--color-text);`}>
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm" style="background: var(--color-primary); color: var(--color-bg)">
-      Skip to content
-    </a>
-    <BackgroundSwitcher client:visible />
-    {showRpgEffects ? <SakuraEffect client:visible /> : null}
-    {showRpgEffects ? <AuroraEffect client:visible /> : null}
-    <GlassNavbar
-      client:load
-      showRpgLink={showRpgNav}
-      localeSwitchHref={localeSwitchHref}
-      localeSwitchLabel={localeSwitchLabel}
-      locale={currentLocale}
-      title={siteText.title}
-    >
-      {
-        showGithubLogin ? (
-          <GithubLoginButton slot="actions" locale={currentLocale} client:load />
-        ) : null
+    <body data-theme={config.theme.preset} data-effects={config.theme.effects.join(',')}>
+    <a href="#main-content" class="skip-link" data-i18n="system.skip_to_content">{t('system.skip_to_content', locale)}</a>
+    <div class="site-backdrop" aria-hidden="true"></div>
+    <canvas id="ambiance-canvas" aria-hidden="true"></canvas>
+    {config.theme.effects.includes('mist') ? <div id="falling-effects" aria-hidden="true"></div> : null}
+
+    <header class="site-header">
+      <nav class="site-nav" aria-label="Primary">
+        <a href="/" class="site-brand" data-site-title>{siteText.title}</a>
+        <div class="site-nav-links">
+          {navItems.map((item) => (
+            <a href={item.href} data-i18n={item.key}>{t(item.key, locale)}</a>
+          ))}
+          <button type="button" class="language-toggle" data-language-toggle data-i18n="nav.language">{t('nav.language', locale)}</button>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main-content" tabindex="-1">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong data-site-title>{siteText.title}</strong>
+        <p data-site-description>{siteText.description}</p>
+      </div>
+      <p>© {new Date().getFullYear()} <span data-author-name>{siteText.authorName}</span></p>
+    </footer>
+
+    <script define:vars={{ translations, effects: config.theme.effects }}>
+      const storedLocale = localStorage.getItem('rpg-blog-locale')
+      const initialLocale = storedLocale === 'en' || storedLocale === 'zh' ? storedLocale : document.documentElement.lang
+
+      function applyLocale(nextLocale) {
+        const dict = translations[nextLocale] || translations.zh
+        document.documentElement.lang = nextLocale
+        localStorage.setItem('rpg-blog-locale', nextLocale)
+        document.querySelectorAll('[data-i18n]').forEach((node) => {
+          const key = node.getAttribute('data-i18n')
+          if (key && dict[key]) node.textContent = dict[key]
+        })
+        document.querySelectorAll('[data-site-title]').forEach((node) => { node.textContent = dict.siteTitle })
+        document.querySelectorAll('[data-site-description]').forEach((node) => { node.textContent = dict.siteDescription })
+        document.querySelectorAll('[data-author-name]').forEach((node) => { node.textContent = dict.authorName })
+        document.querySelectorAll('[data-author-bio]').forEach((node) => { node.textContent = dict.authorBio })
       }
-    </GlassNavbar>
-    <div class="pt-14">
-      <main id="main-content" tabindex="-1">
-        <slot />
-      </main>
-    </div>
-    <GlassFooter locale={currentLocale} author={siteText.authorName} client:visible />
-    <ToastContainer client:load />
+
+      applyLocale(initialLocale)
+      document.querySelector('[data-language-toggle]')?.addEventListener('click', () => {
+        applyLocale(document.documentElement.lang === 'zh' ? 'en' : 'zh')
+      })
+
+      const canvas = document.getElementById('ambiance-canvas')
+      const ctx = canvas?.getContext('2d')
+      const activeEffects = new Set(effects)
+      let particles = []
+
+      function resize() {
+        if (!canvas || !ctx) return
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+        const count = activeEffects.has('embers') || activeEffects.has('stars') ? 42 : 0
+        particles = Array.from({ length: count }, () => ({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: Math.random() * 1.8 + 0.5,
+          vx: (Math.random() - 0.5) * 0.12,
+          vy: (Math.random() - 0.5) * 0.12,
+          a: Math.random() * 0.55 + 0.25,
+        }))
+      }
+
+      function draw() {
+        if (!canvas || !ctx) return
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        if (activeEffects.has('embers') || activeEffects.has('stars')) {
+          for (const p of particles) {
+            p.x = (p.x + p.vx + canvas.width) % canvas.width
+            p.y = (p.y + p.vy + canvas.height) % canvas.height
+            ctx.beginPath()
+            ctx.rect(p.x, p.y, Math.max(2, p.r * 2), Math.max(2, p.r * 2))
+            ctx.fillStyle = activeEffects.has('stars') ? `rgba(100,228,255,${p.a})` : `rgba(247,200,90,${p.a})`
+            ctx.shadowBlur = 10
+            ctx.shadowColor = ctx.fillStyle
+            ctx.fill()
+            ctx.shadowBlur = 0
+          }
+        }
+        requestAnimationFrame(draw)
+      }
+
+      function createFallingEffect(kind) {
+        const root = document.getElementById('falling-effects')
+        if (!root) return
+        const glyph = kind === 'mist' ? '▒' : '✦'
+        for (let i = 0; i < 26; i += 1) {
+          const item = document.createElement('span')
+          item.textContent = glyph
+          item.className = `ambient ${kind}`
+          item.style.left = `${Math.random() * 100}%`
+          item.style.animationDelay = `${Math.random() * 10}s`
+          item.style.animationDuration = `${10 + Math.random() * 12}s`
+          root.appendChild(item)
+        }
+      }
+
+      window.addEventListener('resize', resize)
+      resize()
+      draw()
+      if (activeEffects.has('mist')) createFallingEffect('mist')
+    </script>
   </body>
 </html>

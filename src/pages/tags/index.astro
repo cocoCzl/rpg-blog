@@ -1,0 +1,30 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import config from '../../../site.config'
+import { t } from '../../lib/i18n'
+import { getAllTags } from '../../lib/posts'
+
+const locale = config.locale
+const tags = getAllTags(await getCollection('posts'))
+---
+
+<BaseLayout title={t('tags.title', locale)} description={t('tags.description', locale)}>
+  <section class="hero">
+    <div class="container">
+      <p class="eyebrow" data-i18n="home.clues">{t('home.clues', locale)}</p>
+      <h1 class="hero-title" data-i18n="tags.title">{t('tags.title', locale)}</h1>
+      <p class="hero-copy" data-i18n="tags.description">{t('tags.description', locale)}</p>
+    </div>
+  </section>
+
+  <section class="container guild-panel panel-pad">
+    {tags.length > 0 ? (
+      <div class="tag-list">
+        {tags.map(({ tag, count }) => <a class="badge" href={`/tags/${encodeURIComponent(tag)}`}>#{tag} ({count})</a>)}
+      </div>
+    ) : (
+      <p class="post-summary" data-i18n="tags.empty">{t('tags.empty', locale)}</p>
+    )}
+  </section>
+</BaseLayout>

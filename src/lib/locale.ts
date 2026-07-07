@@ -1,29 +1,20 @@
 import config from '../../site.config'
+import { SUPPORTED_LOCALES, type SupportedLocale } from './theme'
 
-export const SUPPORTED_LOCALES = ['en', 'zh'] as const
-
-export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
+export { SUPPORTED_LOCALES, type SupportedLocale }
 
 export function resolveLocale(value?: string | null): SupportedLocale {
-  return value === 'zh' ? 'zh' : 'en'
+  return SUPPORTED_LOCALES.includes(value as SupportedLocale) ? value as SupportedLocale : config.locale
 }
 
-export function getActiveLocale(): SupportedLocale {
-  if (typeof document !== 'undefined') {
-    return resolveLocale(document.documentElement.lang)
-  }
-  return resolveLocale(config.locale)
+export function localized(value: { zh: string; en: string }, locale: SupportedLocale = config.locale): string {
+  return value[locale] || value.zh
 }
 
-export function getLocaleFromLocals(locals: Record<string, unknown>): SupportedLocale {
-  return resolveLocale(typeof locals.locale === 'string' ? locals.locale : config.locale)
-}
-
-export function normalizeRedirectPath(target?: string | null): string {
-  if (!target) return '/'
-  return /^\/(?!\/)/.test(target) && !target.includes('\n') && !target.includes('\r') ? target : '/'
-}
-
-export function buildLocaleSwitchHref(locale: SupportedLocale, redirectTo: string): string {
-  return `/api/locale?locale=${encodeURIComponent(locale)}&redirect=${encodeURIComponent(normalizeRedirectPath(redirectTo))}`
+export function formatDate(date: Date, locale: SupportedLocale = config.locale): string {
+  return date.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 }

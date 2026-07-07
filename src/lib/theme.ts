@@ -1,7 +1,21 @@
+export const SUPPORTED_LOCALES = ['zh', 'en'] as const
+export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
+
+export const THEME_PRESETS = ['guild'] as const
+export type ThemePresetName = (typeof THEME_PRESETS)[number]
+
+export const AMBIANCE_EFFECTS = ['embers', 'mist', 'stars'] as const
+export type AmbianceEffect = (typeof AMBIANCE_EFFECTS)[number]
+
+export interface LocalizedText {
+  zh: string
+  en: string
+}
+
 export interface AuthorConfig {
-  name: string
+  name: LocalizedText
   avatar?: string
-  bio: string
+  bio: LocalizedText
 }
 
 export interface SocialLinks {
@@ -10,135 +24,79 @@ export interface SocialLinks {
   website?: string
 }
 
-export interface ThemeColors {
-  primary: string
-  secondary: string
-  accent: string
-  background: string
-  backgroundGradient?: string
-  surface: string
-  text: string
-  textSecondary: string
-}
-
-export interface ThemePreset {
-  mode: 'dark' | 'light'
-  fontFamily: {
-    heading: string
-    body: string
-    mono: string
-  }
-  fontScale: number
-  colors: ThemeColors
+export interface DisplayConfig {
+  showAbout: boolean
+  showTags: boolean
+  showArchive: boolean
+  showToolbox: boolean
 }
 
 export interface ThemeConfig {
-  preset: 'ocean' | 'forest' | 'twilight'
-  backgroundImages: string[]
+  preset: ThemePresetName
+  backgroundImage?: string
+  effects: AmbianceEffect[]
 }
 
-export interface CspConfig {
-  scriptSrc?: string[]
-  styleSrc?: string[]
-  imgSrc?: string[]
-  connectSrc?: string[]
-  fontSrc?: string[]
-  frameSrc?: string[]
-}
-
-export interface SecurityConfig {
-  csp: CspConfig
-}
-
-export interface FeatureConfig {
-  comments: boolean
-  githubOAuth: boolean
-  rpg: boolean
+export interface FocusItem {
+  title: LocalizedText
+  detail: LocalizedText
 }
 
 export interface HomeConfig {
-  intro: string
-}
-
-export interface LocalizedSiteConfig {
-  title?: string
-  description?: string
-  homeIntro?: string
-  authorName?: string
-  authorBio?: string
+  intro: LocalizedText
+  focus: FocusItem[]
+  toolbox: FocusItem[]
 }
 
 export interface SiteConfig {
   siteUrl: string
-  title: string
-  description: string
-  home: HomeConfig
+  title: LocalizedText
+  description: LocalizedText
+  locale: SupportedLocale
   author: AuthorConfig
   social: SocialLinks
+  home: HomeConfig
   theme: ThemeConfig
-  locale: 'zh' | 'en'
-  i18n?: Partial<Record<'zh' | 'en', LocalizedSiteConfig>>
+  display: DisplayConfig
   postsPerPage: number
-  features: FeatureConfig
-  security: SecurityConfig
 }
 
-export const themePresets: Record<string, ThemePreset> = {
-  ocean: {
-    mode: 'dark',
-    fontFamily: {
-      heading: '"Noto Serif SC", "Source Han Serif CN", serif',
-      body: 'Inter, system-ui, -apple-system, sans-serif',
-      mono: '"JetBrains Mono", "Fira Code", monospace',
-    },
-    fontScale: 1.0,
-    colors: {
-      primary: '#0EA5E9',
-      secondary: '#06B6D4',
-      accent: '#22D3EE',
-      background: '#0B1121',
-      backgroundGradient: 'from-[#0B1121] via-[#0F2847] to-[#0B1121]',
-      surface: 'rgba(15, 23, 42, 0.75)',
-      text: '#E2E8F0',
-      textSecondary: '#94A3B8',
-    },
-  },
-  forest: {
-    mode: 'dark',
-    fontFamily: {
-      heading: '"Noto Serif SC", "Source Han Serif CN", serif',
-      body: 'Inter, system-ui, -apple-system, sans-serif',
-      mono: '"JetBrains Mono", "Fira Code", monospace',
-    },
-    fontScale: 1.0,
-    colors: {
-      primary: '#10B981',
-      secondary: '#34D399',
-      accent: '#6EE7B7',
-      background: '#0A1C0E',
-      backgroundGradient: 'from-[#0A1C0E] via-[#1A3A25] to-[#0A1C0E]',
-      surface: 'rgba(15, 30, 20, 0.75)',
-      text: '#ECFDF5',
-      textSecondary: '#A7F3D0',
-    },
-  },
-  twilight: {
-    mode: 'dark',
-    fontFamily: {
-      heading: '"Noto Serif SC", "Source Han Serif CN", serif',
-      body: 'Inter, system-ui, -apple-system, sans-serif',
-      mono: '"JetBrains Mono", "Fira Code", monospace',
-    },
-    fontScale: 1.0,
-    colors: {
-      primary: '#C3B1E1',
-      secondary: '#FFB7C5',
-      accent: '#E0F7FA',
-      background: '#0F0B1A',
-      backgroundGradient: 'from-[#0F0B1A] via-[#2D1B4E] to-[#0F0B1A]',
-      surface: 'rgba(15, 15, 32, 0.75)',
-      text: '#F5F0FF',
-      textSecondary: '#C0B0D8',
-    },
+export interface ThemePreset {
+  mode: 'dark' | 'light'
+  sceneImage: string
+  background: string
+  surface: string
+  surfaceStrong: string
+  border: string
+  text: string
+  textSecondary: string
+  primary: string
+  secondary: string
+  accent: string
+  muted: string
+  shadow: string
+  heading: string
+  body: string
+  mono: string
+}
+
+export const themePresets: Record<ThemePresetName, ThemePreset> = {
+  guild: {
+    mode: 'light',
+    sceneImage: '/images/scenes/guild-hall.svg',
+    background: '#FFFDF5',
+    surface: 'rgba(255, 255, 255, 0.96)',
+    surfaceStrong: 'rgba(255, 249, 205, 0.98)',
+    border: '#111111',
+    text: '#101010',
+    textSecondary: '#4C4C5A',
+    primary: '#C36AA4',
+    secondary: '#58D6C8',
+    accent: '#F4D142',
+    muted: '#F6E7F4',
+    shadow: '8px 8px 0 #111111',
+    heading: '"Press Start 2P", "Noto Sans SC", ui-monospace, monospace',
+    body: '"Alegreya Sans", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif',
+    mono: '"Press Start 2P", "Courier New", ui-monospace, monospace',
   },
 }

@@ -2,14 +2,16 @@
   "name": "rpg-blog",
   "type": "module",
   "version": "0.3.0",
-  "description": "A personal blog template with RPG gamification, built on Astro + Vue 3 + SQLite",
+  "description": "A static-first pixel JRPG guild journal blog template built with Astro",
   "keywords": [
     "astro",
     "blog-template",
-    "rpg",
-    "vue",
-    "sqlite",
-    "ssr"
+    "pixel-rpg",
+    "jrpg",
+    "pixel-ui",
+    "guild-journal",
+    "static",
+    "personal-blog"
   ],
   "homepage": "https://github.com/cocoCzl/rpg-blog#readme",
   "bugs": {
@@ -31,24 +33,19 @@
     "check": "npm run build && npm test",
     "check:template": "node scripts/check-template.mjs",
     "test": "npm run test:unit",
-    "test:unit": "vitest run src/__tests__/stores.test.ts src/__tests__/site-config.test.ts src/__tests__/template-helpers.test.ts src/__tests__/auth-helpers.test.ts src/__tests__/setup-profiles.test.ts src/__tests__/setup-content.test.ts src/__tests__/setup-checklist.test.ts",
-    "test:integration": "node scripts/run-integration-tests.mjs",
-    "test:all": "npm run test:unit && npm run test:integration"
+    "test:unit": "vitest run",
+    "test:visual": "node scripts/visual-smoke.mjs",
+    "test:all": "npm run test:unit"
   },
   "dependencies": {
-    "@astrojs/node": "^9.5.5",
-    "@astrojs/tailwind": "^6.0.2",
-    "@astrojs/vue": "^5.0.13",
-    "astro": "^5.7.10",
-    "better-sqlite3": "^11.9.1",
-    "pinia": "^2.3.0",
-    "sharp": "^0.34.5",
-    "tailwindcss": "^3.4.17",
-    "vue": "^3.5.13"
+    "@astrojs/react": "^6.0.1",
+    "@pxlkit/core": "^1.3.3",
+    "astro": "^7.0.6",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "@vue/test-utils": "^2.4.10",
     "jsdom": "^29.1.1",
     "typescript": "^5.8.3",
     "vitest": "^4.1.8"

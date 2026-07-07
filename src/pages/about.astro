@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import config from '../../site.config'
+import { t } from '../lib/i18n'
+import { localized } from '../lib/locale'
+import { getSiteText } from '../lib/site-text'
+
+const locale = config.locale
+const siteText = getSiteText(config, locale)
+const socialLinks = Object.entries(config.social).filter(([, href]) => href)
+---
+
+<BaseLayout title={t('about.title', locale)} description={siteText.authorBio}>
+  <section class="hero">
+    <div class="container">
+      <p class="eyebrow" data-i18n="about.title">{t('about.title', locale)}</p>
+      <h1 class="hero-title" data-author-name>{siteText.authorName}</h1>
+      <p class="hero-copy" data-author-bio>{siteText.authorBio}</p>
+    </div>
+  </section>
+
+  <section class="container guild-grid">
+    <div class="guild-panel panel-pad">
+      <p class="eyebrow" data-i18n="about.focus">{t('about.focus', locale)}</p>
+      <h2 class="section-title">{siteText.description}</h2>
+      <p class="post-summary">{siteText.homeIntro}</p>
+      {config.author.avatar ? (
+        <img src={config.author.avatar} alt="" class="optional-cover" loading="lazy" />
+      ) : (
+        <div class="no-cover-mark" aria-hidden="true">Profile</div>
+      )}
+    </div>
+    <aside class="stack">
+      <section class="guild-panel panel-pad">
+        <p class="eyebrow" data-i18n="about.quest_log">{t('about.quest_log', locale)}</p>
+        <div class="stack">
+          {config.home.focus.map((item) => (
+            <div class="toolkit-item">
+              <strong>{localized(item.title, locale)}</strong>
+              <p class="post-summary">{localized(item.detail, locale)}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section class="guild-panel panel-pad">
+        <p class="eyebrow" data-i18n="about.social">{t('about.social', locale)}</p>
+        {socialLinks.length > 0 ? (
+          <div class="tag-list">
+            {socialLinks.map(([label, href]) => <a class="badge" href={href as string}>{label}</a>)}
+          </div>
+        ) : (
+          <p class="post-summary" data-i18n="about.no_social">{t('about.no_social', locale)}</p>
+        )}
+      </section>
+    </aside>
+  </section>
+</BaseLayout>

@@ -1,19 +1,19 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro'
+import config from '../../site.config'
 import { t } from '../lib/i18n'
-import { getLocaleFromLocals } from '../lib/locale'
 
-const locale = getLocaleFromLocals(Astro.locals)
+const locale = config.locale
 ---
 
 <BaseLayout title={`404 - ${t('system.not_found', locale)}`}>
-  <main class="min-h-screen flex items-center justify-center" style="background: linear-gradient(to bottom right, var(--color-bg), var(--color-surface))">
-    <div class="text-center space-y-4 animate-float-in">
-      <h1 class="text-8xl font-bold" style="font-family: var(--font-heading); color: var(--color-primary)">404</h1>
-      <p class="text-xl" style="color: var(--color-text-secondary)">{t('system.not_found', locale)}</p>
-      <a href="/" class="inline-block px-6 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80" style="background: var(--color-primary); color: var(--color-bg)">
+  <section class="hero">
+    <div class="container panel" style="text-align: center;">
+      <h1 class="hero-title">404</h1>
+      <p class="hero-copy" style="margin: 0 auto 1.5rem;" data-i18n="system.not_found">{t('system.not_found', locale)}</p>
+      <a href="/" class="badge">
         &larr; {t('blog.back_home', locale)}
       </a>
     </div>
-  </main>
+  </section>
 </BaseLayout>

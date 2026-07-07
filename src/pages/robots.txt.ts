@@ -6,8 +6,6 @@ const BASE_URL = config.siteUrl
 export const GET: APIRoute = () => {
   const robots = `User-agent: *
 Allow: /
-Disallow: /admin
-Disallow: /api
 Disallow: /og-image
 Sitemap: ${BASE_URL}/sitemap.xml
 `

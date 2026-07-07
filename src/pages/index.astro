@@ -1,99 +1,147 @@
 ---
 import { getCollection } from 'astro:content'
+import GuildPixelIcon from '../components/GuildPixelIcon'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import config from '../../site.config'
-import ArticleCardList from '../components/vue/ArticleCardList.vue'
-import { isRpgEnabled } from '../lib/features'
 import { t } from '../lib/i18n'
-import { getLocaleFromLocals } from '../lib/locale'
-import { filterPostsByLocale, sortPosts } from '../lib/posts'
+import { formatDate, localized } from '../lib/locale'
+import { getAllCategories, getAllTags, getPostSlug, getPublishedPosts } from '../lib/posts'
 import { getSiteText } from '../lib/site-text'
 
-const allPosts = await getCollection('posts')
-const pageSize = config.postsPerPage
-const locale = getLocaleFromLocals(Astro.locals)
+const locale = config.locale
 const siteText = getSiteText(config, locale)
-const sortedPosts = sortPosts(filterPostsByLocale(allPosts, locale))
-const totalPages = Math.ceil(sortedPosts.length / pageSize)
-const currentPage = 1
-const pageArticles = sortedPosts.slice(0, pageSize)
-const heroBackground = isRpgEnabled()
-  ? 'linear-gradient(to bottom right, var(--color-bg), color-mix(in srgb, var(--color-bg) 80%, var(--color-primary) 20%))'
-  : 'linear-gradient(to bottom right, var(--color-bg), var(--color-surface))'
-const topTags = Array.from(
-  sortedPosts.flatMap((post) => post.data.tags).reduce((map, tag) => {
-    map.set(tag, (map.get(tag) || 0) + 1)
-    return map
-  }, new Map<string, number>())
-).sort((a, b) => b[1] - a[1]).slice(0, 8)
+const posts = getPublishedPosts(await getCollection('posts'))
+const pinned = posts.find((post) => post.data.featured) || posts[0]
+const saves = posts.filter((post) => post.id !== pinned?.id).slice(0, 4)
+const chapters = getAllCategories(posts).slice(0, 5)
+const clues = getAllTags(posts).slice(0, 8)
+const socialLinks = Object.entries(config.social).filter(([, href]) => href)
+const commandItems = [
+  { href: '/archive', label: t('nav.posts', locale), icon: 'journal' as const },
+  { href: '/chapters', label: t('home.regions', locale), icon: 'chapter' as const },
+  { href: '/tags', label: t('home.clues', locale), icon: 'clue' as const },
+  { href: '/about', label: t('home.profile', locale), icon: 'profile' as const },
+]
 ---
 
 <BaseLayout>
-  <main class="min-h-screen" style={`background: ${heroBackground}`}>
-    <div class="max-w-3xl mx-auto px-4 py-16">
-      <header class="text-center mb-12 space-y-4 animate-fade-in">
-        <h1 class="text-4xl md:text-5xl font-bold" style="font-family: var(--font-heading)">
-          {siteText.title}
-        </h1>
-        <p class="text-lg" style="color: var(--color-text-secondary)">
-          {siteText.description}
-        </p>
-      </header>
+  <section class="retro-hero" aria-labelledby="guild-title">
+    <div class="retro-spark spark-a" aria-hidden="true">✦</div>
+    <div class="retro-spark spark-b" aria-hidden="true">✦</div>
 
-      {!isRpgEnabled() && (
-        <section class="grid gap-4 md:grid-cols-[1.4fr_1fr] mb-10">
-          <div class="glass-card p-6 space-y-4">
-            <h2 class="text-lg font-bold" style="font-family: var(--font-heading); color: var(--color-text)">
-              {t('home.featured_notes', locale)}
-            </h2>
-            <div class="flex items-center gap-3">
-              {config.author.avatar && (
-                <img
-                  src={config.author.avatar}
-                alt={siteText.authorName}
-                  class="w-12 h-12 rounded-full object-cover"
-                  loading="lazy"
-                />
-              )}
-              <p class="text-sm" style="color: var(--color-text-secondary)">
-                {siteText.authorName}
-              </p>
-            </div>
-            <p class="text-sm leading-relaxed" style="color: var(--color-text-secondary)">
-              {siteText.homeIntro}
-            </p>
-          </div>
-          <div class="glass-card p-6 space-y-3">
-            <h2 class="text-lg font-bold" style="font-family: var(--font-heading); color: var(--color-text)">
-              {t('home.popular_tags', locale)}
-            </h2>
-            <div class="flex flex-wrap gap-2">
-              {topTags.map(([tag, count]) => (
-                <span class="px-2 py-1 rounded-full text-xs" style="background: var(--color-surface); color: var(--color-text-secondary)">
-                  #{tag} ({count})
-                </span>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+    <aside class="floating-card floating-command tilt-left" aria-labelledby="command-menu-title">
+      <p class="eyebrow" id="command-menu-title" data-i18n="home.command_menu">{t('home.command_menu', locale)}</p>
+      <div class="command-list">
+        {commandItems.map((item) => (
+          <a class="command-item" href={item.href}>
+            <span>
+              <GuildPixelIcon name={item.icon} label="" size={20} />
+              {item.label}
+            </span>
+          </a>
+        ))}
+      </div>
+    </aside>
 
-      {!isRpgEnabled() && (
-        <div class="mb-6">
-          <h2 class="text-xl font-bold" style="font-family: var(--font-heading); color: var(--color-text)">
-            {t('home.recent_posts', locale)}
-          </h2>
+    <aside class="floating-card floating-profile tilt-right" aria-labelledby="character-slot-title">
+      <p class="eyebrow" id="character-slot-title" data-i18n="home.about">{t('home.about', locale)}</p>
+      <div class="profile-mini">
+        <div class="profile-avatar" aria-hidden="true">
+          {config.author.avatar ? <img src={config.author.avatar} alt="" /> : <span class="avatar-sprite"></span>}
         </div>
-      )}
+        <div>
+          <strong data-author-name>{siteText.authorName}</strong>
+          <p class="post-summary" data-author-bio>{siteText.authorBio}</p>
+        </div>
+      </div>
+    </aside>
 
-      <ArticleCardList
-        articles={pageArticles}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        basePath="/page/"
-        locale={locale}
-        client:load
-      />
+    <div class="container retro-hero-center">
+      <span class="retro-label" data-i18n="home.guild_interface">{t('home.guild_interface', locale)}</span>
+      <h1 id="guild-title" class="retro-title" data-site-title>{siteText.title}</h1>
+      <p class="retro-subtitle" data-site-description>{siteText.description}</p>
+      <div class="hero-actions">
+        <a class="pixel-button primary" href={pinned ? `/posts/${getPostSlug(pinned)}` : '/archive'} data-i18n="home.read_more">{t('home.read_more', locale)}</a>
+        <a class="pixel-button" href="/about" data-i18n="home.profile">{t('home.profile', locale)}</a>
+      </div>
     </div>
-  </main>
+
+    {pinned && (
+      <a class="floating-card floating-quest tilt-left-soft" href={`/posts/${getPostSlug(pinned)}`}>
+        <span class="eyebrow" data-i18n="home.featured">{t('home.featured', locale)}</span>
+        <strong>{pinned.data.title}</strong>
+        <span class="post-summary">{pinned.data.summary}</span>
+      </a>
+    )}
+
+    <aside class="floating-card floating-clues tilt-right-soft">
+      <p class="eyebrow" data-i18n="home.clues">{t('home.clues', locale)}</p>
+      <div class="tag-list">
+        {clues.slice(0, 5).map(({ tag }) => <a class="badge" href={`/tags/${encodeURIComponent(tag)}`}>#{tag}</a>)}
+      </div>
+    </aside>
+  </section>
+
+  <section class="container retro-section" aria-labelledby="save-slots-title">
+    <div class="section-heading">
+      <span class="retro-label" id="save-slots-title" data-i18n="home.latest">{t('home.latest', locale)}</span>
+      <h2 class="section-title" data-i18n="home.latest">{t('home.latest', locale)}</h2>
+    </div>
+    <div class="save-list retro-save-grid">
+      {saves.length > 0 ? saves.map((post, index) => (
+        <a class="save-slot" href={`/posts/${getPostSlug(post)}`}>
+          <span class="save-index">{String(index + 1).padStart(2, '0')}</span>
+          <span class="stack">
+            <span class="post-meta">
+              <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date, locale)}</time>
+              {post.data.category && <span>{post.data.category}</span>}
+              {post.data.tags.slice(0, 2).map((tag) => <span>#{tag}</span>)}
+            </span>
+            <strong class="post-title">{post.data.title}</strong>
+            <span class="post-summary">{post.data.summary}</span>
+          </span>
+        </a>
+      )) : (
+        <p class="post-summary" data-i18n="home.slot_empty">{t('home.slot_empty', locale)}</p>
+      )}
+    </div>
+  </section>
+
+  <section class="container retro-index-grid" aria-label="Guild journal indexes">
+    <article class:list={['pixel-card', 'route-card', { wide: socialLinks.length === 0 }]}>
+      <p class="eyebrow" data-i18n="home.regions">{t('home.regions', locale)}</p>
+      <div class="chapter-route-list">
+        {chapters.map(({ category, count }) => (
+          <a class="chapter-route" href={`/chapters/${encodeURIComponent(category)}`}>
+            <span>{category}</span>
+            <strong>{count}</strong>
+          </a>
+        ))}
+      </div>
+    </article>
+
+    {socialLinks.length > 0 && (
+      <article class="pixel-card links-card">
+        <p class="eyebrow" data-i18n="home.mailbox">{t('home.mailbox', locale)}</p>
+        <div class="tag-list">
+          {socialLinks.map(([label, href]) => <a class="badge" href={href as string}>{label}</a>)}
+        </div>
+        <a class="rss-link" href="/feed.xml" data-i18n="home.rss_feed">{t('home.rss_feed', locale)}</a>
+      </article>
+    )}
+
+    {config.display.showToolbox && (
+      <article id="inventory-toolkit" class="pixel-card wide">
+        <p class="eyebrow" data-i18n="home.toolbox">{t('home.toolbox', locale)}</p>
+        <div class="toolkit-grid">
+          {config.home.toolbox.map((item) => (
+            <div class="toolkit-item">
+              <strong>{localized(item.title, locale)}</strong>
+              <p class="post-summary">{localized(item.detail, locale)}</p>
+            </div>
+          ))}
+        </div>
+      </article>
+    )}
+  </section>
 </BaseLayout>

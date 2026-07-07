@@ -1,39 +1,32 @@
-import { getCollection } from 'astro:content'
 import type { APIRoute } from 'astro'
 import config from '../../site.config'
-import { isPublishedPost } from '../lib/posts'
-
-let cachedPosts: ReturnType<typeof getCollection> | null = null
-let cacheExpiry = 0
-
-async function getCachedPosts() {
-  const now = Date.now()
-  if (!cachedPosts || now > cacheExpiry) {
-    cachedPosts = getCollection('posts')
-    cacheExpiry = now + 60_000 // 1 minute cache
-  }
-  return cachedPosts
-}
+import { localized } from '../lib/locale'
+import { escapeXml } from '../lib/utils'
 
 export const GET: APIRoute = async ({ url }) => {
-  const slug = url.searchParams.get('slug')
-  let title = config.title
-  if (slug) {
-    const posts = await getCachedPosts()
-    const post = posts.filter(isPublishedPost).find(p => p.slug === slug)
-    if (post) title = post.data.title
-  }
-
+  const title = url.searchParams.get('title') || localized(config.title, config.locale)
+  const subtitle = localized(config.description, config.locale)
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
     <defs>
       <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#1e1b2e"/>
-        <stop offset="100%" style="stop-color:#3d2b5a"/>
+        <stop offset="0%" stop-color="#100D18"/>
+        <stop offset="55%" stop-color="#2A2435"/>
+        <stop offset="100%" stop-color="#0B1020"/>
       </linearGradient>
+      <radialGradient id="glow" cx="30%" cy="20%" r="70%">
+        <stop offset="0%" stop-color="#E8C77A" stop-opacity="0.42"/>
+        <stop offset="100%" stop-color="#E8C77A" stop-opacity="0"/>
+      </radialGradient>
     </defs>
     <rect width="1200" height="630" fill="url(#bg)"/>
-    <text x="600" y="280" text-anchor="middle" fill="#f5f0ff" font-size="56" font-weight="bold" font-family="serif">${esc(title)}</text>
-    <text x="600" y="350" text-anchor="middle" fill="#c0b0d8" font-size="28" font-family="sans-serif">${esc(config.title.toLowerCase())}</text>
+    <rect width="1200" height="630" fill="url(#glow)"/>
+    <circle cx="1010" cy="128" r="3" fill="#F6EFE2" opacity="0.9"/>
+    <circle cx="942" cy="210" r="2" fill="#F6EFE2" opacity="0.65"/>
+    <circle cx="1082" cy="316" r="2.5" fill="#F6EFE2" opacity="0.7"/>
+    <path d="M132 468 C320 410 518 510 720 452 C872 408 994 430 1084 386" fill="none" stroke="#E8C77A" stroke-width="3" opacity="0.42"/>
+    <text x="110" y="250" fill="#F6EFE2" font-size="72" font-weight="700" font-family="Georgia, serif">${esc(title)}</text>
+    <text x="114" y="326" fill="#C9BDA9" font-size="30" font-family="Arial, sans-serif">${esc(subtitle)}</text>
+    <text x="114" y="518" fill="#E8C77A" font-size="26" font-family="Arial, sans-serif">${esc(localized(config.title, config.locale))}</text>
   </svg>`
 
   try {
@@ -45,10 +38,8 @@ export const GET: APIRoute = async ({ url }) => {
   }
 }
 
-import { escapeXml } from '../lib/utils'
-
-function esc(s: string) {
-  return escapeXml(s)
+function esc(value: string) {
+  return escapeXml(value)
     .replace(/`/g, '&#96;')
     .replace(/\n/g, '&#10;')
     .replace(/\r/g, '&#13;')
