@@ -13,6 +13,8 @@ const htmlChecks = [
       'floating-command',
       'floating-profile',
       'floating-quest',
+      'section-toolbar',
+      'toolbar-link',
       'save-slot',
       '指令菜单',
       '任务板',

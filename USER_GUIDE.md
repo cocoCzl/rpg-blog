@@ -1,0 +1,166 @@
+# User Guide
+
+This guide explains what each button and homepage module does, and how to turn `rpg-blog` into your own blog.
+
+## Core Concepts
+
+`rpg-blog` is a static blog template. It does not include an admin editor, and you do not write posts directly in the browser. You edit Markdown/MDX files locally, preview the site, then rebuild and deploy.
+
+The project wraps normal blog concepts in JRPG guild journal language:
+
+- Journal Entry: one blog post.
+- Archive: the full post list.
+- Chapter: a post category, powered by `category`.
+- Clue: a post tag, powered by `tags`.
+- Profile: the about page for the author.
+- Quest Board: the pinned post area on the homepage.
+- Recent Save Slots: the latest post list.
+- Inventory Toolkit: an optional area for resources, projects, tools, or links.
+
+## Homepage Buttons And Modules
+
+### Command Menu
+
+The main navigation menu on the homepage. It opens the core site pages.
+
+- Archive: opens `/archive` and shows all published Journal Entries.
+- Chapters: opens `/chapters` and groups entries by category.
+- Clues: opens `/tags` and groups entries by tag.
+- Profile: opens `/about` and shows the author profile.
+
+### Main Hero Buttons
+
+The homepage title area includes two primary actions.
+
+- Load Save: opens the current pinned entry. If no pinned entry exists, it opens the Archive.
+- Profile: opens the author profile page.
+
+### Character Slot
+
+The small profile card on the homepage. It shows the author name, avatar, and bio from the `author` section in `site.config.ts`.
+
+### Quest Board
+
+The Quest Board shows one pinned Journal Entry. It uses the first post with `featured: true`; if no post is featured, it falls back to the latest post.
+
+Use it for:
+
+- Your introductory post.
+- The post you most want visitors to read.
+- A project overview, roadmap, or long-running entry.
+
+### Recent Save Slots
+
+Recent Save Slots show the latest posts. Each save slot links to the full entry.
+
+Each slot can show:
+
+- Publish date.
+- Chapter, from `category`.
+- A few Clues, from `tags`.
+- Title and summary.
+
+### Recent Save Toolbar
+
+The toolbar beside the Recent Save Slots heading includes quick links:
+
+- Chapters: opens `/chapters`.
+- Public Links: appears when GitHub, Twitter, or website links are configured, and jumps to the Public Links area.
+- RSS Feed: opens `/feed.xml`. This is an XML feed for RSS readers. Seeing structured XML in a browser is normal.
+
+### Public Links
+
+Public Links show external links such as GitHub, Twitter, or your personal website. This area appears only when links are set in the `social` section of `site.config.ts`.
+
+### Inventory Toolkit
+
+Inventory Toolkit is an optional support module. It is not a game inventory and not a post list.
+
+Use it for:
+
+- Projects you maintain.
+- Useful tools or resource links.
+- Writing plans, roadmaps, or work highlights.
+- Personal links you want visitors to find quickly.
+
+Toolkit items can be plain text notes, or clickable links when `href` is set. Visibility is controlled by `display.showToolbox`.
+
+## Writing Posts
+
+Add Markdown or MDX files to `src/content/posts/`. The file name becomes part of the post URL.
+
+Example:
+
+```md
+---
+title: "My First Journal Entry"
+date: 2026-03-21
+summary: "A short summary shown on the save board."
+tags: ["writing", "notes"]
+category: "Start"
+featured: true
+draft: false
+---
+
+Write your post here.
+```
+
+Common fields:
+
+- `title`: post title, required.
+- `date`: publish date, required.
+- `summary`: short summary, required, shown on home and list pages.
+- `tags`: Clues; use any number of tags.
+- `category`: Chapter name.
+- `cover`: cover image path.
+- `updated`: optional update date.
+- `featured`: set to `true` to allow the entry to appear on the Quest Board.
+- `draft`: set to `true` to hide the entry from the published site.
+
+Put cover images in `public/images/`, then reference them like this:
+
+```md
+cover: "/images/my-cover.png"
+```
+
+## Customizing Site Info
+
+Most personal settings live in `site.config.ts`.
+
+Common fields to edit:
+
+- `siteUrl`: production site URL.
+- `locale`: default UI language, `zh` or `en`.
+- `title`: site title.
+- `description`: site description.
+- `author.name`: author name.
+- `author.avatar`: author avatar path.
+- `author.bio`: author bio.
+- `social`: public external links.
+- `home.toolbox`: Inventory Toolkit items.
+- `display.showToolbox`: whether the Inventory Toolkit appears.
+- `postsPerPage`: posts per list page.
+
+Avatars can be PNG, JPG, WEBP, or SVG. Put the image in `public/images/`, then use a path like:
+
+```ts
+avatar: '/images/avatar.png'
+```
+
+## Preview And Publish
+
+Preview locally:
+
+```bash
+npm run dev
+```
+
+Build production files:
+
+```bash
+SITE_URL=https://example.com npm run build
+```
+
+The build output goes to `dist/`. In production, you serve the static build output or run your built Docker image. The blog does not need to keep running on your own computer.
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for deployment details.

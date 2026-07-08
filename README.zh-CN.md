@@ -96,6 +96,8 @@ draft: false
 
 支持的 frontmatter 字段包括 `title`、`date`、`updated`、`summary`、`tags`、`category`、`cover`、`draft` 和 `featured`。
 
+如果你想了解首页每个按钮、每个模块的含义，以及如何组织文章、章节、线索和道具栏工具箱，见 [USER_GUIDE.zh-CN.md](./USER_GUIDE.zh-CN.md)。
+
 ## 个性化配置
 
 大部分个人设置都在 `site.config.ts`：站点 URL、中英文标题、描述、作者名称、头像、简介、社交链接、默认语言、首页焦点内容、道具栏工具箱、背景图、氛围效果和导航显示状态。

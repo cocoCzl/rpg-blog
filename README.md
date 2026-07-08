@@ -92,6 +92,8 @@ Write your post here.
 
 Supported frontmatter fields are `title`, `date`, `updated`, `summary`, `tags`, `category`, `cover`, `draft`, and `featured`.
 
+For a guide to every homepage button and module, plus how to organize entries, Chapters, Clues, and Inventory Toolkit items, see [USER_GUIDE.md](./USER_GUIDE.md).
+
 ## Customize
 
 Most personal settings live in `site.config.ts`: site URL, Chinese and English titles, description, author name, avatar, bio, social links, default language, homepage focus items, Inventory Toolkit items, background image, effects, and navigation visibility.

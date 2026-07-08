@@ -83,9 +83,13 @@ const commandItems = [
   </section>
 
   <section class="container retro-section" aria-labelledby="save-slots-title">
-    <div class="section-heading">
-      <span class="retro-label" id="save-slots-title" data-i18n="home.latest">{t('home.latest', locale)}</span>
+    <div class="section-toolbar">
       <h2 class="section-title" data-i18n="home.latest">{t('home.latest', locale)}</h2>
+      <div class="section-actions" aria-label="Guild journal shortcuts">
+        <a class="toolbar-link" href="/chapters" data-i18n="home.regions">{t('home.regions', locale)}</a>
+        {socialLinks.length > 0 && <a class="toolbar-link" href="#public-links" data-i18n="home.mailbox">{t('home.mailbox', locale)}</a>}
+        <a class="toolbar-link" href="/feed.xml" data-i18n="home.rss_feed">{t('home.rss_feed', locale)}</a>
+      </div>
     </div>
     <div class="save-list retro-save-grid">
       {saves.length > 0 ? saves.map((post, index) => (
@@ -107,41 +111,33 @@ const commandItems = [
     </div>
   </section>
 
-  <section class="container retro-index-grid" aria-label="Guild journal indexes">
-    <article class:list={['pixel-card', 'route-card', { wide: socialLinks.length === 0 }]}>
-      <p class="eyebrow" data-i18n="home.regions">{t('home.regions', locale)}</p>
-      <div class="chapter-route-list">
-        {chapters.map(({ category, count }) => (
-          <a class="chapter-route" href={`/chapters/${encodeURIComponent(category)}`}>
-            <span>{category}</span>
-            <strong>{count}</strong>
-          </a>
-        ))}
-      </div>
-    </article>
+  {(config.display.showToolbox || socialLinks.length > 0) && (
+    <section class="container home-support-strip" aria-label="Guild journal support links">
+      {socialLinks.length > 0 && (
+        <article id="public-links" class="support-panel links-card">
+          <p class="eyebrow" data-i18n="home.mailbox">{t('home.mailbox', locale)}</p>
+          <div class="tag-list compact-links">
+            {socialLinks.map(([label, href]) => <a class="badge" href={href as string}>{label}</a>)}
+          </div>
+        </article>
+      )}
 
-    {socialLinks.length > 0 && (
-      <article class="pixel-card links-card">
-        <p class="eyebrow" data-i18n="home.mailbox">{t('home.mailbox', locale)}</p>
-        <div class="tag-list">
-          {socialLinks.map(([label, href]) => <a class="badge" href={href as string}>{label}</a>)}
-        </div>
-        <a class="rss-link" href="/feed.xml" data-i18n="home.rss_feed">{t('home.rss_feed', locale)}</a>
-      </article>
-    )}
-
-    {config.display.showToolbox && (
-      <article id="inventory-toolkit" class="pixel-card wide">
-        <p class="eyebrow" data-i18n="home.toolbox">{t('home.toolbox', locale)}</p>
-        <div class="toolkit-grid">
-          {config.home.toolbox.map((item) => (
-            <div class="toolkit-item">
-              <strong>{localized(item.title, locale)}</strong>
-              <p class="post-summary">{localized(item.detail, locale)}</p>
-            </div>
-          ))}
-        </div>
-      </article>
-    )}
-  </section>
+      {config.display.showToolbox && (
+        <article id="inventory-toolkit" class="support-panel toolbox-panel">
+          <p class="eyebrow" data-i18n="home.toolbox">{t('home.toolbox', locale)}</p>
+          <div class="toolbox-strip">
+            {config.home.toolbox.map((item) => {
+              const Tag = item.href ? 'a' : 'div'
+              return (
+                <Tag class="toolkit-item compact" href={item.href}>
+                  <strong>{localized(item.title, locale)}</strong>
+                  <span class="post-summary">{localized(item.detail, locale)}</span>
+                </Tag>
+              )
+            })}
+          </div>
+        </article>
+      )}
+    </section>
+  )}
 </BaseLayout>

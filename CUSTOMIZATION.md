@@ -51,3 +51,4 @@ The UI can switch between Chinese and English labels, but Journal Entry content 
 
 Set `display.showToolbox` to control whether the optional Inventory Toolkit appears. Toolkit items can represent projects, resources, links, or tools, but they should not imply real gameplay inventory state.
 
+Each `home.toolbox` item supports `title`, `detail`, and an optional `href`. Items with `href` render as links; items without `href` render as compact informational notes.

@@ -40,6 +40,7 @@ export interface ThemeConfig {
 export interface FocusItem {
   title: LocalizedText
   detail: LocalizedText
+  href?: string
 }
 
 export interface HomeConfig {
