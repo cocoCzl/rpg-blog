@@ -44,10 +44,12 @@ npm install
 npm run setup
 ```
 
+交互式向导会先询问提示语言。输入 `zh` 使用中文提示，输入 `en` 使用英文提示。
+
 也可以使用非交互式初始化：
 
 ```bash
-npm run setup -- --yes --titleZh "我的博客" --titleEn "My Blog" --content starter
+npm run setup -- --yes --wizardLocale zh --titleZh "我的博客" --titleEn "My Blog" --content starter
 ```
 
 5. 启动本地开发服务器：
@@ -63,7 +65,7 @@ npm run dev
 ## Guild Setup Wizard
 
 ```bash
-npm run setup -- --yes --titleZh "企鹅工会" --titleEn "Penguin Guild" --content starter
+npm run setup -- --yes --wizardLocale zh --titleZh "企鹅工会" --titleEn "Penguin Guild" --content starter
 ```
 
 向导会配置站点名称、角色档案、默认语言、头像、社交链接、道具栏工具箱显示状态和起始手札内容。它会更新 `site.config.ts`，创建或更新 `.env`，并且可以处理 `src/content/posts/` 里的文章文件。

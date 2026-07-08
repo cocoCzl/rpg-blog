@@ -42,10 +42,12 @@ npm install
 npm run setup
 ```
 
+The interactive wizard first asks for the wizard language. Choose `en` for English prompts or `zh` for Chinese prompts.
+
 For a non-interactive setup:
 
 ```bash
-npm run setup -- --yes --titleZh "我的博客" --titleEn "My Blog" --content starter
+npm run setup -- --yes --wizardLocale en --titleZh "我的博客" --titleEn "My Blog" --content starter
 ```
 
 5. Start local development:
@@ -59,7 +61,7 @@ Open `http://localhost:4321` and review the homepage, Profile, Chapters, Clues, 
 ## Guild Setup Wizard
 
 ```bash
-npm run setup -- --yes --titleZh "企鹅工会" --titleEn "Penguin Guild" --content starter
+npm run setup -- --yes --wizardLocale en --titleZh "企鹅工会" --titleEn "Penguin Guild" --content starter
 ```
 
 The wizard configures site identity, Profile fields, language, avatar, links, Inventory Toolkit visibility, and starter Journal Entry content. It updates `site.config.ts`, creates or updates `.env`, and can manage files in `src/content/posts/`.

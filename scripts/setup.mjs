@@ -10,6 +10,7 @@ const envPath = new URL('../.env', import.meta.url)
 const postsDirPath = new URL('../src/content/posts/', import.meta.url)
 
 export const VALID_LOCALES = ['zh', 'en']
+export const VALID_WIZARD_LOCALES = ['zh', 'en']
 export const VALID_THEMES = ['guild']
 export const VALID_EFFECTS = ['embers', 'mist', 'stars']
 
@@ -38,6 +39,86 @@ const defaults = {
   showArchive: 'true',
   showToolbox: 'true',
   content: 'keep',
+  wizardLocale: 'zh',
+}
+
+const wizardText = {
+  zh: {
+    title: 'rpg-blog 公会初始化向导',
+    hint: '直接按回车会保留推荐默认值。',
+    complete: '公会初始化向导完成。',
+    theme: '主题',
+    effects: '氛围效果',
+    none: '无',
+    contentMode: '内容模式',
+    created: '已创建',
+    removedPosts: '已移除手札',
+    next: '下一步：本地运行 npm run dev 预览，部署前运行 npm run build。',
+    labels: {
+      siteUrl: '站点地址',
+      titleZh: '中文站点标题',
+      titleEn: '英文 UI 站点标题',
+      descriptionZh: '中文副标题',
+      descriptionEn: '英文 UI 副标题',
+      introZh: '中文首页介绍',
+      introEn: '英文 UI 首页介绍',
+      authorZh: '中文作者名称',
+      authorEn: '英文 UI 作者名称',
+      bioZh: '中文作者简介',
+      bioEn: '英文 UI 作者简介',
+      avatar: '作者头像路径',
+      github: 'GitHub 社交链接',
+      twitter: 'Twitter/X 社交链接',
+      website: '个人网站链接',
+      locale: '默认 UI 语言 (zh/en)',
+      theme: '公会主题 (guild)',
+      background: '可选自定义背景路径',
+      effects: '公会氛围效果，多个用英文逗号分隔',
+      showAbout: '显示角色档案页 (true/false)',
+      showTags: '显示线索页 (true/false)',
+      showArchive: '显示手札归档页 (true/false)',
+      showToolbox: '显示道具栏工具箱 (true/false)',
+      content: '内容模式 (keep/starter/clear)',
+    },
+  },
+  en: {
+    title: 'rpg-blog Guild Setup Wizard',
+    hint: 'Press Enter to keep the recommended default.',
+    complete: 'Guild Setup Wizard complete.',
+    theme: 'Theme',
+    effects: 'Effects',
+    none: 'none',
+    contentMode: 'Content mode',
+    created: 'Created',
+    removedPosts: 'Removed posts',
+    next: 'Next: run npm run dev locally, then npm run build before deployment.',
+    labels: {
+      siteUrl: 'Site URL',
+      titleZh: 'Chinese site title',
+      titleEn: 'English UI site title',
+      descriptionZh: 'Chinese subtitle',
+      descriptionEn: 'English UI subtitle',
+      introZh: 'Chinese homepage intro',
+      introEn: 'English UI homepage intro',
+      authorZh: 'Chinese author name',
+      authorEn: 'English UI author name',
+      bioZh: 'Chinese author bio',
+      bioEn: 'English UI author bio',
+      avatar: 'Author avatar path',
+      github: 'GitHub social URL',
+      twitter: 'Twitter/X social URL',
+      website: 'Website social URL',
+      locale: 'Default UI locale (zh/en)',
+      theme: 'Guild theme (guild)',
+      background: 'Optional custom background path',
+      effects: 'Atmospheric guild effects, comma separated',
+      showAbout: 'Show Profile (true/false)',
+      showTags: 'Show clues page (true/false)',
+      showArchive: 'Show Journal Archive (true/false)',
+      showToolbox: 'Show Inventory Toolkit (true/false)',
+      content: 'Content mode (keep/starter/clear)',
+    },
+  },
 }
 
 function parseArgs(argv) {
@@ -66,6 +147,14 @@ function normalizeChoice(value, allowed, fallback) {
   return allowed.includes(normalized) ? normalized : fallback
 }
 
+export function normalizeWizardLocale(value) {
+  return normalizeChoice(value, VALID_WIZARD_LOCALES, defaults.wizardLocale)
+}
+
+export function getWizardText(locale) {
+  return wizardText[normalizeWizardLocale(locale)]
+}
+
 function parseEffects(value) {
   return String(value || '')
     .split(',')
@@ -90,32 +179,39 @@ async function promptForConfig(args) {
 
   try {
     output.write('\nrpg-blog Guild Setup Wizard\n')
-    output.write('Press Enter to keep the recommended default.\n\n')
+    const wizardLocale = normalizeWizardLocale(
+      await rl.question(`向导语言 / Wizard language (zh/en) [${defaults.wizardLocale}]: `),
+    )
+    const text = getWizardText(wizardLocale)
+    const labels = text.labels
+    output.write(`\n${text.title}\n`)
+    output.write(`${text.hint}\n\n`)
     return {
-      siteUrl: await ask('siteUrl', 'Site URL'),
-      titleZh: await ask('titleZh', 'Chinese site title'),
-      titleEn: await ask('titleEn', 'English UI site title'),
-      descriptionZh: await ask('descriptionZh', 'Chinese subtitle'),
-      descriptionEn: await ask('descriptionEn', 'English UI subtitle'),
-      introZh: await ask('introZh', 'Chinese homepage intro'),
-      introEn: await ask('introEn', 'English UI homepage intro'),
-      authorZh: await ask('authorZh', 'Chinese author name'),
-      authorEn: await ask('authorEn', 'English UI author name'),
-      bioZh: await ask('bioZh', 'Chinese author bio'),
-      bioEn: await ask('bioEn', 'English UI author bio'),
-      avatar: await ask('avatar', 'Author avatar path'),
-      github: await ask('github', 'GitHub social URL'),
-      twitter: await ask('twitter', 'Twitter/X social URL'),
-      website: await ask('website', 'Website social URL'),
-      locale: await ask('locale', 'Default UI locale (zh/en)'),
-      theme: await ask('theme', 'Guild theme (guild)'),
-      background: await ask('background', 'Optional custom background path'),
-      effects: await ask('effects', 'Atmospheric guild effects, comma separated'),
-      showAbout: await ask('showAbout', 'Show Profile (true/false)'),
-      showTags: await ask('showTags', 'Show clues page (true/false)'),
-      showArchive: await ask('showArchive', 'Show Journal Archive (true/false)'),
-      showToolbox: await ask('showToolbox', 'Show Inventory Toolkit (true/false)'),
-      content: await ask('content', 'Content mode (keep/starter/clear)'),
+      wizardLocale,
+      siteUrl: await ask('siteUrl', labels.siteUrl),
+      titleZh: await ask('titleZh', labels.titleZh),
+      titleEn: await ask('titleEn', labels.titleEn),
+      descriptionZh: await ask('descriptionZh', labels.descriptionZh),
+      descriptionEn: await ask('descriptionEn', labels.descriptionEn),
+      introZh: await ask('introZh', labels.introZh),
+      introEn: await ask('introEn', labels.introEn),
+      authorZh: await ask('authorZh', labels.authorZh),
+      authorEn: await ask('authorEn', labels.authorEn),
+      bioZh: await ask('bioZh', labels.bioZh),
+      bioEn: await ask('bioEn', labels.bioEn),
+      avatar: await ask('avatar', labels.avatar),
+      github: await ask('github', labels.github),
+      twitter: await ask('twitter', labels.twitter),
+      website: await ask('website', labels.website),
+      locale: await ask('locale', labels.locale),
+      theme: await ask('theme', labels.theme),
+      background: await ask('background', labels.background),
+      effects: await ask('effects', labels.effects),
+      showAbout: await ask('showAbout', labels.showAbout),
+      showTags: await ask('showTags', labels.showTags),
+      showArchive: await ask('showArchive', labels.showArchive),
+      showToolbox: await ask('showToolbox', labels.showToolbox),
+      content: await ask('content', labels.content),
     }
   } finally {
     rl.close()
@@ -251,6 +347,7 @@ export default config
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const rawConfig = await promptForConfig(args)
+  const text = getWizardText(rawConfig.wizardLocale)
   const current = await readFile(siteConfigPath, 'utf8')
   const { source, config } = buildSiteConfigSource(current, rawConfig)
 
@@ -270,13 +367,13 @@ async function main() {
     mode: config.contentMode,
   })
 
-  output.write('\nGuild Setup Wizard complete.\n')
-  output.write(`Theme: ${config.theme}\n`)
-  output.write(`Effects: ${config.effects.join(', ') || 'none'}\n`)
-  output.write(`Content mode: ${contentResult.mode}\n`)
-  if (contentResult.createdFile) output.write(`Created: src/content/posts/${contentResult.createdFile}\n`)
-  if (contentResult.removedFiles.length > 0) output.write(`Removed posts: ${contentResult.removedFiles.join(', ')}\n`)
-  output.write('\nNext: run npm run dev locally, then npm run build before deployment.\n')
+  output.write(`\n${text.complete}\n`)
+  output.write(`${text.theme}: ${config.theme}\n`)
+  output.write(`${text.effects}: ${config.effects.join(', ') || text.none}\n`)
+  output.write(`${text.contentMode}: ${contentResult.mode}\n`)
+  if (contentResult.createdFile) output.write(`${text.created}: src/content/posts/${contentResult.createdFile}\n`)
+  if (contentResult.removedFiles.length > 0) output.write(`${text.removedPosts}: ${contentResult.removedFiles.join(', ')}\n`)
+  output.write(`\n${text.next}\n`)
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

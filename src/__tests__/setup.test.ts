@@ -4,8 +4,27 @@ describe('site wizard', () => {
   it('exports allowed setup choices', async () => {
     const setup = await import('../../scripts/setup.mjs')
     expect(setup.VALID_LOCALES).toEqual(['zh', 'en'])
+    expect(setup.VALID_WIZARD_LOCALES).toEqual(['zh', 'en'])
     expect(setup.VALID_THEMES).toEqual(['guild'])
     expect(setup.VALID_EFFECTS).toEqual(['embers', 'mist', 'stars'])
+  })
+
+  it('normalizes wizard prompt locales', async () => {
+    const { normalizeWizardLocale } = await import('../../scripts/setup.mjs')
+    expect(normalizeWizardLocale('zh')).toBe('zh')
+    expect(normalizeWizardLocale('EN')).toBe('en')
+    expect(normalizeWizardLocale('bad')).toBe('zh')
+    expect(normalizeWizardLocale('')).toBe('zh')
+  })
+
+  it('provides localized wizard prompt text', async () => {
+    const { getWizardText } = await import('../../scripts/setup.mjs')
+    expect(getWizardText('zh').labels.siteUrl).toBe('站点地址')
+    expect(getWizardText('zh').labels.bioZh).toBe('中文作者简介')
+    expect(getWizardText('zh').complete).toBe('公会初始化向导完成。')
+    expect(getWizardText('en').labels.siteUrl).toBe('Site URL')
+    expect(getWizardText('en').labels.bioZh).toBe('Chinese author bio')
+    expect(getWizardText('bad').labels.siteUrl).toBe('站点地址')
   })
 
   it('builds a valid non-interactive site config source', async () => {
