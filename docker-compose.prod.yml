@@ -1,0 +1,7 @@
+services:
+  app:
+    image: my-rpg-blog:latest
+    container_name: rpg-blog
+    ports:
+      - "80:80"
+    restart: unless-stopped

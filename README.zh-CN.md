@@ -28,6 +28,8 @@ npm run dev
 
 ## 通过模板创建自己的博客
 
+下面步骤用于本地准备和预览，不是线上部署方式。`npm run dev` 只适合在自己的电脑或临时开发环境里检查效果。
+
 1. 在 GitHub 点击 **Use this template** 创建你自己的仓库，或者手动 fork 后 clone。
 2. clone 你的仓库并进入项目目录。
 3. 安装依赖：
@@ -55,6 +57,8 @@ npm run dev
 ```
 
 打开 `http://localhost:4321`，检查首页、角色档案、章节、线索和手札条目。
+
+确认本地效果后，再按“构建与部署”把静态站点发布到服务器或静态平台。
 
 ## Guild Setup Wizard
 
@@ -94,9 +98,17 @@ draft: false
 
 大部分个人设置都在 `site.config.ts`：站点 URL、中英文标题、描述、作者名称、头像、简介、社交链接、默认语言、首页焦点内容、道具栏工具箱、背景图、氛围效果和导航显示状态。
 
-完整配置说明见 [CUSTOMIZATION.md](./CUSTOMIZATION.md)。
+完整配置说明见 [CUSTOMIZATION.zh-CN.md](./CUSTOMIZATION.zh-CN.md)，英文版见 [CUSTOMIZATION.md](./CUSTOMIZATION.md)。
 
 ## 构建与部署
+
+生产环境不需要运行 `npm run dev`。这个模板会构建成静态文件，线上由 Nginx、Docker 镜像、静态平台或对象存储托管。
+
+常见部署路线：
+
+- 本地定制后构建 `dist/`，上传到服务器，用 Nginx 托管。
+- 本地定制后打 Docker 镜像，把镜像传到服务器，用 `docker-compose.prod.yml` 运行。
+- 在服务器拉取代码并定制，然后用 Docker 构建运行，或构建 `dist/` 后交给 Nginx。
 
 构建静态文件到 `dist/`：
 
@@ -104,16 +116,31 @@ draft: false
 SITE_URL=https://example.com npm run build
 ```
 
-非 Docker 远程服务器部署时，把 `dist/` 上传到服务器，并用 Nginx 或其他静态文件服务托管。
+`SITE_URL` 要换成你的生产地址。它会影响 canonical URL、RSS、sitemap 和分享卡片元数据。
 
-Docker 部署时，用生产域名构建镜像，然后在服务器上运行：
+如果你要用 Docker，并且服务器不想安装 Git/Node/npm，可以在本地打好镜像：
 
 ```bash
-docker build --build-arg SITE_URL=https://example.com -t my-rpg-blog .
-docker run -d --name rpg-blog --restart unless-stopped -p 80:80 my-rpg-blog
+docker build --build-arg SITE_URL=https://blog.example.com -t my-rpg-blog:latest .
+docker save my-rpg-blog:latest -o my-rpg-blog.tar
 ```
 
-也支持 GitHub Pages、Netlify、Vercel static output、Cloudflare Pages 和对象存储等静态平台。远程 Docker 和非 Docker 部署细节见 [DEPLOYMENT.md](./DEPLOYMENT.md)。
+把 `my-rpg-blog.tar` 和 `docker-compose.prod.yml` 传到服务器后导入并启动：
+
+```bash
+docker load -i my-rpg-blog.tar
+docker compose -f docker-compose.prod.yml up -d
+```
+
+如果你愿意在服务器保留源码，也可以在服务器拉取仓库后构建运行：
+
+```bash
+SITE_URL=https://blog.example.com docker compose up -d --build
+```
+
+非 Docker 远程服务器部署时，把 `dist/` 上传到服务器，并用 Nginx 或其他静态文件服务托管。也支持 GitHub Pages、Netlify、Vercel static output、Cloudflare Pages 和对象存储等静态平台。
+
+完整中文部署步骤见 [DEPLOYMENT.zh-CN.md](./DEPLOYMENT.zh-CN.md)，英文版见 [DEPLOYMENT.md](./DEPLOYMENT.md)。
 
 ## 后续同步模板更新
 
