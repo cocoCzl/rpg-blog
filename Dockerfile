@@ -5,6 +5,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+ARG SITE_URL=http://localhost:4321
+ENV SITE_URL=${SITE_URL}
 RUN npm run build
 
 FROM nginx:1.27-alpine

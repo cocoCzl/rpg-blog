@@ -104,15 +104,16 @@ draft: false
 SITE_URL=https://example.com npm run build
 ```
 
-把 `dist/` 上传到静态托管平台，例如 GitHub Pages、Netlify、Vercel static output、Cloudflare Pages、Nginx 或对象存储。
+非 Docker 远程服务器部署时，把 `dist/` 上传到服务器，并用 Nginx 或其他静态文件服务托管。
 
-也支持 Docker：
+Docker 部署时，用生产域名构建镜像，然后在服务器上运行：
 
 ```bash
-docker compose up --build
+docker build --build-arg SITE_URL=https://example.com -t my-rpg-blog .
+docker run -d --name rpg-blog --restart unless-stopped -p 80:80 my-rpg-blog
 ```
 
-部署细节见 [DEPLOYMENT.md](./DEPLOYMENT.md)。
+也支持 GitHub Pages、Netlify、Vercel static output、Cloudflare Pages 和对象存储等静态平台。远程 Docker 和非 Docker 部署细节见 [DEPLOYMENT.md](./DEPLOYMENT.md)。
 
 ## 后续同步模板更新
 

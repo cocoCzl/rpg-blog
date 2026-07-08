@@ -104,15 +104,16 @@ Build static files into `dist/`:
 SITE_URL=https://example.com npm run build
 ```
 
-Upload `dist/` to a static host such as GitHub Pages, Netlify, Vercel static output, Cloudflare Pages, Nginx, or object storage.
+For a remote server without Docker, upload `dist/` and serve it with Nginx or another static file server.
 
-Docker is also supported:
+For Docker deployment, build the image with your production URL and run it on the server:
 
 ```bash
-docker compose up --build
+docker build --build-arg SITE_URL=https://example.com -t my-rpg-blog .
+docker run -d --name rpg-blog --restart unless-stopped -p 80:80 my-rpg-blog
 ```
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for deployment details.
+Static platforms such as GitHub Pages, Netlify, Vercel static output, Cloudflare Pages, and object storage are also supported. See [DEPLOYMENT.md](./DEPLOYMENT.md) for remote Docker and non-Docker deployment details.
 
 ## Keep Template Updates
 
