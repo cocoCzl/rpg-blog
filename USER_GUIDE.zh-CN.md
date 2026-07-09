@@ -85,6 +85,8 @@
 
 工具箱条目可以只是说明文字，也可以配置 `href` 变成可点击链接。是否显示由 `display.showToolbox` 控制。
 
+安装向导会让你配置默认的两个工具箱条目。初始化后如果想继续增删或调整内容，可以编辑 `site.config.ts` 里的 `home.toolbox`。
+
 ## 怎么写文章
 
 把 Markdown 或 MDX 文件放到 `src/content/posts/`。文件名会成为文章 URL 的一部分。
