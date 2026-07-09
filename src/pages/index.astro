@@ -113,18 +113,17 @@ const commandItems = [
 
   {(config.display.showToolbox || socialLinks.length > 0) && (
     <section class="container home-support-strip" aria-label="Guild journal support links">
-      {socialLinks.length > 0 && (
-        <article id="public-links" class="support-panel links-card">
-          <p class="eyebrow" data-i18n="home.mailbox">{t('home.mailbox', locale)}</p>
-          <div class="tag-list compact-links">
-            {socialLinks.map(([label, href]) => <a class="badge" href={href as string}>{label}</a>)}
-          </div>
-        </article>
-      )}
-
-      {config.display.showToolbox && (
+      {config.display.showToolbox ? (
         <article id="inventory-toolkit" class="support-panel toolbox-panel">
-          <p class="eyebrow" data-i18n="home.toolbox">{t('home.toolbox', locale)}</p>
+          <div class="support-panel-header">
+            <p class="eyebrow" data-i18n="home.toolbox">{t('home.toolbox', locale)}</p>
+            {socialLinks.length > 0 && (
+              <div id="public-links" class="tag-list compact-links" aria-label={t('home.mailbox', locale)}>
+                <span class="compact-links-label" data-i18n="home.mailbox">{t('home.mailbox', locale)}</span>
+                {socialLinks.map(([label, href]) => <a class="badge" href={href as string}>{label}</a>)}
+              </div>
+            )}
+          </div>
           <div class="toolbox-strip">
             {config.home.toolbox.map((item) => {
               const Tag = item.href ? 'a' : 'div'
@@ -135,6 +134,13 @@ const commandItems = [
                 </Tag>
               )
             })}
+          </div>
+        </article>
+      ) : (
+        <article id="public-links" class="support-panel links-card">
+          <p class="eyebrow" data-i18n="home.mailbox">{t('home.mailbox', locale)}</p>
+          <div class="tag-list compact-links">
+            {socialLinks.map(([label, href]) => <a class="badge" href={href as string}>{label}</a>)}
           </div>
         </article>
       )}
