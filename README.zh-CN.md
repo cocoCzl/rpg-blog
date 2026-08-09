@@ -12,7 +12,7 @@
 - 使用手札条目、章节、线索、角色档案、道具栏工具箱等公开语言
 - 中文和英文 UI chrome
 - Astro Content Collections 管理 Markdown/MDX 内容
-- RSS、sitemap、robots.txt、Open Graph、静态构建、Docker、Nginx 支持
+- RSS、sitemap、robots.txt、Open Graph 和 Docker 一键部署包
 - 接入 React 与 Pxlkit，用于像素图标渲染
 
 ## 快速开始
@@ -60,7 +60,7 @@ npm run dev
 
 打开 `http://localhost:4321`，检查首页、角色档案、章节、线索和手札条目。
 
-确认本地效果后，再按“构建与部署”把静态站点发布到服务器或静态平台。
+确认本地效果后，按“Docker 一键部署”生成可上传到服务器的部署包。
 
 ## Guild Setup Wizard
 
@@ -77,6 +77,14 @@ npm run setup -- --yes --wizardLocale zh --titleZh "企鹅工会" --titleEn "Pen
 - `clear`：移除现有条目，让博客保持空内容状态。
 
 ## 写第一篇文章
+
+推荐运行文章向导：
+
+```bash
+npm run new:post
+```
+
+向导会创建 `src/content/posts/` 下的 Markdown 草稿。也可以手动新建 Markdown 或 MDX 文件。
 
 把 Markdown 或 MDX 文件放到 `src/content/posts/`。
 
@@ -104,47 +112,17 @@ draft: false
 
 完整配置说明见 [CUSTOMIZATION.zh-CN.md](./CUSTOMIZATION.zh-CN.md)，英文版见 [CUSTOMIZATION.md](./CUSTOMIZATION.md)。
 
-## 构建与部署
+## Docker 一键部署
 
-生产环境不需要运行 `npm run dev`。这个模板会构建成静态文件，线上由 Nginx、Docker 镜像、静态平台或对象存储托管。
-
-常见部署路线：
-
-- 本地定制后构建 `dist/`，上传到服务器，用 Nginx 托管。
-- 本地定制后打 Docker 镜像，把镜像传到服务器，用 `docker-compose.prod.yml` 运行。
-- 在服务器拉取代码并定制，然后用 Docker 构建运行，或构建 `dist/` 后交给 Nginx。
-
-构建静态文件到 `dist/`：
+这是唯一支持的线上部署方式。先在本地完成配置和写作，再运行：
 
 ```bash
-SITE_URL=https://example.com npm run build
+npm run package:deploy
 ```
 
-`SITE_URL` 要换成你的生产地址。它会影响 canonical URL、RSS、sitemap 和分享卡片元数据。
+它会在 `release/` 生成一个含 Docker 镜像、Caddy 和安装脚本的压缩包。上传到 Ubuntu/Debian 服务器、解压后执行 `sudo ./install.sh` 即可启动，Caddy 会自动配置 HTTPS。
 
-如果你要用 Docker，并且服务器不想安装 Git/Node/npm，可以在本地打好镜像：
-
-```bash
-docker build --build-arg SITE_URL=https://blog.example.com -t my-rpg-blog:latest .
-docker save my-rpg-blog:latest -o my-rpg-blog.tar
-```
-
-把 `my-rpg-blog.tar` 和 `docker-compose.prod.yml` 传到服务器后导入并启动：
-
-```bash
-docker load -i my-rpg-blog.tar
-docker compose -f docker-compose.prod.yml up -d
-```
-
-如果你愿意在服务器保留源码，也可以在服务器拉取仓库后构建运行：
-
-```bash
-SITE_URL=https://blog.example.com docker compose up -d --build
-```
-
-非 Docker 远程服务器部署时，把 `dist/` 上传到服务器，并用 Nginx 或其他静态文件服务托管。也支持 GitHub Pages、Netlify、Vercel static output、Cloudflare Pages 和对象存储等静态平台。
-
-完整中文部署步骤见 [DEPLOYMENT.zh-CN.md](./DEPLOYMENT.zh-CN.md)，英文版见 [DEPLOYMENT.md](./DEPLOYMENT.md)。
+完整条件、更新文章方式和排错方法见 [DEPLOYMENT.zh-CN.md](./DEPLOYMENT.zh-CN.md)。
 
 ## 后续同步模板更新
 

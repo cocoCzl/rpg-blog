@@ -12,7 +12,7 @@ The template is built for people who want a personal blog that stands out visual
 - Journal Entries, Chapters, Clues, Profile, and Inventory Toolkit vocabulary
 - Bilingual site chrome for Chinese and English UI labels
 - Markdown/MDX content through Astro content collections
-- RSS, sitemap, robots.txt, Open Graph metadata, static build, Docker, and Nginx support
+- RSS, sitemap, robots.txt, Open Graph metadata, and a Docker deployment package
 - React integration with Pxlkit for pixel icon rendering
 
 ## Quick Start
@@ -74,6 +74,14 @@ Content modes:
 
 ## Write Your First Post
 
+The recommended path is the post wizard:
+
+```bash
+npm run new:post
+```
+
+It creates a Markdown draft in `src/content/posts/`. You can also add Markdown or MDX files manually.
+
 Add Markdown or MDX files to `src/content/posts/`.
 
 ```md
@@ -100,24 +108,17 @@ Most personal settings live in `site.config.ts`: site URL, Chinese and English t
 
 See [CUSTOMIZATION.md](./CUSTOMIZATION.md) for the full customization guide.
 
-## Build And Deploy
+## Docker Deployment Package
 
-Build static files into `dist/`:
-
-```bash
-SITE_URL=https://example.com npm run build
-```
-
-For a remote server without Docker, upload `dist/` and serve it with Nginx or another static file server.
-
-For Docker deployment, build the image with your production URL and run it on the server:
+This is the only supported production deployment. Configure and write locally, then create one uploadable package:
 
 ```bash
-docker build --build-arg SITE_URL=https://example.com -t my-rpg-blog .
-docker run -d --name rpg-blog --restart unless-stopped -p 80:80 my-rpg-blog
+npm run package:deploy
 ```
 
-Static platforms such as GitHub Pages, Netlify, Vercel static output, Cloudflare Pages, and object storage are also supported. See [DEPLOYMENT.md](./DEPLOYMENT.md) for remote Docker and non-Docker deployment details.
+It creates an archive in `release/` containing the Docker images, Caddy configuration, and installation script. Upload it to an Ubuntu/Debian server, extract it, and run `sudo ./install.sh`; Caddy configures HTTPS automatically.
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for requirements, updates, and troubleshooting.
 
 ## Keep Template Updates
 

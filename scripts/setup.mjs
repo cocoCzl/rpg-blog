@@ -63,7 +63,7 @@ const wizardText = {
     contentMode: '内容模式',
     created: '已创建',
     removedPosts: '已移除手札',
-    next: '下一步：本地运行 npm run dev 预览，部署前运行 npm run build。',
+    next: '下一步：本地运行 npm run dev 预览，部署前运行 npm run package:deploy。',
     toolboxHint: '道具栏工具箱内容也可以之后在 site.config.ts 的 home.toolbox 修改。',
     labels: {
       siteUrl: '站点地址',
@@ -112,7 +112,7 @@ const wizardText = {
     contentMode: 'Content mode',
     created: 'Created',
     removedPosts: 'Removed posts',
-    next: 'Next: run npm run dev locally, then npm run build before deployment.',
+    next: 'Next: run npm run dev locally, then npm run package:deploy before deployment.',
     toolboxHint: 'You can also edit Inventory Toolkit items later in site.config.ts under home.toolbox.',
     labels: {
       siteUrl: 'Site URL',

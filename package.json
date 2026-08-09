@@ -27,6 +27,8 @@
   },
   "scripts": {
     "setup": "node scripts/setup.mjs",
+    "new:post": "node scripts/new-post.mjs",
+    "package:deploy": "node scripts/package-deploy.mjs",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",

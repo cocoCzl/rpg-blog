@@ -1,241 +1,58 @@
-# 部署指南
+# Docker 一键部署指南
 
-`rpg-blog` 会构建成静态文件。生产环境不需要运行 Node 开发服务器，也不需要在服务器上跑 `npm run dev`。构建后的 `dist/` 可以由 Nginx、静态托管平台、对象存储，或者 Docker 镜像里的 Nginx 提供服务。
+`rpg-blog` 只支持 Docker 部署包。你在自己的电脑上配置和写文章，生成一个压缩包后上传服务器；服务器不需要安装 Git、Node.js 或 npm。
 
-构建生产版本前，请设置 `SITE_URL` 为你的线上地址。它会用于 canonical URL、RSS 链接、sitemap 和 Open Graph 元数据。
+## 准备条件
 
-## 先选部署方式
+- 本地电脑：Node.js `>=22`、Docker Desktop。
+- 服务器：Ubuntu/Debian、Docker Engine 和 Docker Compose 插件。
+- 一个已解析到服务器公网 IP 的域名；防火墙与云安全组放行 TCP `80`、`443`。
 
-常见方式有三种：
+部署包内含博客镜像和固定版本的 Caddy 镜像。Caddy 会为你的域名自动申请并续期 HTTPS 证书，因此服务器无需访问镜像仓库，但必须能访问互联网以完成证书验证。
 
-- 本地定制后直接部署静态文件：服务器只需要 Nginx 或其他静态文件服务。
-- 本地定制后打 Docker 镜像：服务器只需要 Docker/Compose，不需要 Git、Node 或 npm。
-- 服务器拉取代码后在服务器定制：服务器需要 Git、Node/npm，并可选择 Docker 或 Nginx 静态部署。
+## 首次部署
 
-`docker-compose.yml` 用于“有源码时构建镜像”。`docker-compose.prod.yml` 用于“服务器已有镜像，只负责运行”。
-
-## 方式一：本地定制后部署静态文件
-
-这种方式适合你在本地完成所有定制，然后只把构建产物上传到服务器。
-
-本地准备并构建：
+1. 在本地初始化博客。向导中的站点地址必须填写你的最终域名，例如 `https://blog.example.com`：
 
 ```bash
 npm install
 npm run setup
-SITE_URL=https://blog.example.com npm run build
+npm run dev
 ```
 
-没有域名、只是用服务器 IP 试跑时，可以先用：
+2. 本地确认效果后创建部署包：
 
 ```bash
-SITE_URL=http://SERVER_IP npm run build
+npm run package:deploy
 ```
 
-上传 `dist/` 到服务器：
+该命令会读取 `.env` 的 `SITE_URL`，构建博客镜像，并在 `release/` 生成类似 `rpg-blog-20260807120000.tar.gz` 的文件。
+
+3. 用宝塔、1Panel、SFTP 或其他文件上传工具把该压缩包上传到服务器。服务器解压并安装：
 
 ```bash
-rsync -av --delete dist/ user@SERVER_IP:/var/www/rpg-blog/
+tar -xzf rpg-blog-*.tar.gz
+cd rpg-blog-*
+sudo ./install.sh
 ```
 
-最小 Nginx server block：
+脚本会导入镜像并启动博客。随后访问你的域名；首次签发证书通常需要几分钟。
 
-```nginx
-server {
-  listen 80;
-  server_name blog.example.com;
+## 发布新文章
 
-  root /var/www/rpg-blog;
-  index index.html;
-
-  location / {
-    try_files $uri $uri/ /404.html;
-  }
-}
-```
-
-更新 Nginx 配置后：
+在本地创建文章：
 
 ```bash
-sudo nginx -t
-sudo systemctl reload nginx
+npm run new:post
 ```
 
-更新文章或配置时，在本地重新 `npm run build`，再重新上传 `dist/`。
+按提示填写内容后编辑生成的 Markdown 文件，运行 `npm run dev` 预览。确认后再次运行 `npm run package:deploy`，上传新压缩包，并在服务器重复执行 `sudo ./install.sh`。脚本会替换博客容器，HTTPS 证书会继续保留。
 
-## 方式二：本地打 Docker 镜像后上传服务器
+博客是静态站点，文章会打包进 Docker 镜像；它没有网页后台或在线上传文章功能。
 
-这种方式适合你在本地完成定制和镜像构建，服务器只负责运行镜像。
+## 常见问题
 
-本地构建生产镜像：
-
-```bash
-docker build --build-arg SITE_URL=https://blog.example.com -t my-rpg-blog:latest .
-```
-
-本地试跑镜像：
-
-```bash
-docker run --rm -p 8080:80 my-rpg-blog:latest
-```
-
-打开：
-
-```text
-http://localhost:8080
-```
-
-注意：这个镜像可以在本地和服务器都跑，但 RSS、sitemap、canonical、分享卡片等元数据会固定为构建时的 `SITE_URL`。
-
-导出镜像：
-
-```bash
-docker save my-rpg-blog:latest -o my-rpg-blog.tar
-```
-
-上传镜像和生产 Compose 文件到服务器：
-
-```bash
-ssh user@SERVER_IP "mkdir -p /opt/rpg-blog"
-scp my-rpg-blog.tar docker-compose.prod.yml user@SERVER_IP:/opt/rpg-blog/
-```
-
-在服务器导入镜像：
-
-```bash
-docker load -i /opt/rpg-blog/my-rpg-blog.tar
-```
-
-启动容器：
-
-```bash
-docker compose -f /opt/rpg-blog/docker-compose.prod.yml up -d
-```
-
-默认 `docker-compose.prod.yml` 使用 `80:80`。如果服务器 80 端口被占用，先把端口改成例如：
-
-```yaml
-ports:
-  - "4321:80"
-```
-
-然后访问：
-
-```text
-http://SERVER_IP:4321
-```
-
-更新文章或配置时，在本地重新构建镜像、`docker save`、上传、`docker load`，再执行：
-
-```bash
-docker compose -f /opt/rpg-blog/docker-compose.prod.yml up -d
-```
-
-## 方式三：服务器拉代码后定制和部署
-
-这种方式适合你想直接在服务器上修改配置、写文章或构建。服务器需要安装 Git、Node.js `>=22`、npm，以及可选的 Docker。
-
-在服务器拉取你的仓库：
-
-```bash
-git clone https://github.com/YOUR_NAME/YOUR_BLOG_REPO.git
-cd YOUR_BLOG_REPO
-```
-
-在服务器定制博客：
-
-```bash
-npm install
-npm run setup
-```
-
-### 方式三 A：服务器源码构建 Docker 镜像
-
-```bash
-SITE_URL=https://blog.example.com docker compose up -d --build
-```
-
-当前 `docker-compose.yml` 默认端口映射是 `4321:80`，也就是容器内 Nginx 监听 80，服务器对外暴露 4321。
-
-试跑访问：
-
-```text
-http://SERVER_IP:4321
-```
-
-如果要正式使用 80 端口，把 `docker-compose.yml` 里的端口映射从：
-
-```yaml
-ports:
-  - "4321:80"
-```
-
-改为：
-
-```yaml
-ports:
-  - "80:80"
-```
-
-然后重新启动：
-
-```bash
-SITE_URL=https://blog.example.com docker compose up -d --build
-```
-
-### 方式三 B：服务器构建静态文件并交给 Nginx
-
-```bash
-SITE_URL=https://blog.example.com npm run build
-sudo rsync -av --delete dist/ /var/www/rpg-blog/
-```
-
-Nginx 配置可使用方式一里的 server block。
-
-## 静态托管平台
-
-构建后的 `dist/` 也可以部署到常见静态平台：
-
-- GitHub Pages
-- Cloudflare Pages
-- Vercel static output
-- Netlify
-- 对象存储静态站点
-- 任意 Nginx 静态文件服务
-
-构建命令：
-
-```bash
-npm run build
-```
-
-发布目录：
-
-```text
-dist
-```
-
-平台环境变量里建议设置：
-
-```text
-SITE_URL=https://blog.example.com
-```
-
-## HTTPS
-
-HTTPS 可以放到同一台服务器上的 Nginx、Caddy、证书管理工具、云厂商面板或 CDN 里配置。这个模板本身只负责生成静态站点或 Docker 镜像，不直接签发证书。
-
-## 发布前检查
-
-发布前运行：
-
-```bash
-npm run check
-npm run check:template
-```
-
-构建后可以再跑视觉冒烟检查：
-
-```bash
-npm run test:visual
-```
+- **证书没有签发**：确认域名 A/AAAA 记录已指向该服务器，且 `80/443` 未被其他服务占用。
+- **端口被占用**：关闭或迁移已有的 Nginx、Apache、宝塔网站服务或其他反向代理后再部署。Caddy 需要独占 `80/443`。
+- **查看状态**：运行 `sudo docker compose --project-name rpg-blog --project-directory /opt/rpg-blog ps`。
+- **查看日志**：运行 `sudo docker compose --project-name rpg-blog --project-directory /opt/rpg-blog logs -f`。

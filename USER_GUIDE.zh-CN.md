@@ -157,12 +157,12 @@ avatar: '/images/avatar.png'
 npm run dev
 ```
 
-本地构建生产文件：
+创建部署包：
 
 ```bash
-SITE_URL=https://example.com npm run build
+npm run package:deploy
 ```
 
-构建结果在 `dist/`。线上部署时运行的是构建后的静态文件，或者运行你本地打好的 Docker 镜像，不需要把博客长期放在自己电脑上跑。
+线上部署使用这个命令生成的 Docker 压缩包，不需要把博客长期放在自己电脑上跑。
 
 部署细节见 [DEPLOYMENT.zh-CN.md](./DEPLOYMENT.zh-CN.md)。

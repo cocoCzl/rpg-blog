@@ -14,7 +14,7 @@
 - Optional Inventory Toolkit
 - Dark JRPG Menu Palette and atmospheric guild backdrop
 - Bilingual Chinese/English UI chrome
-- RSS, sitemap, robots, Open Graph metadata, Docker, and Nginx static deployment
+- RSS, sitemap, robots, Open Graph metadata, and Docker deployment packages
 - React integration and Pxlkit-based pixel icon rendering when it improves visual completion
 
 ## Out Of Scope
@@ -29,4 +29,3 @@
 - Copyrighted game assets or direct copying from existing games
 
 The template should pass the Three-Second RPG Menu Test: a first-time visitor should recognize a polished pixel RPG menu interface for a personal blog within three seconds.
-

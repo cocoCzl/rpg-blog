@@ -1,135 +1,40 @@
-# Deployment
+# Docker Deployment Package
 
-`rpg-blog` builds to static files. Production does not need a Node server; the generated `dist/` folder can be served by Nginx, a static host, object storage, or the included Docker image.
+`rpg-blog` is deployed only through its Docker deployment package. Configure and write locally, generate one archive, then upload it to the server. The server does not need Git, Node.js, npm, or registry access.
 
-Set `SITE_URL` to your production URL before building. It is used for canonical URLs, RSS links, sitemap entries, and Open Graph metadata.
+## Requirements
 
-## Remote Server With Docker
+- Local machine: Node.js `>=22` and Docker Desktop.
+- Server: Ubuntu/Debian with Docker Engine and Docker Compose plugin.
+- A domain resolving to the server public IP, with TCP ports `80` and `443` open.
 
-Docker is the recommended path for a Linux VPS because the image builds the Astro site and serves the generated files with Nginx.
+The package includes the blog image and a pinned Caddy image. Caddy obtains and renews HTTPS certificates automatically. The server needs internet access only for ACME certificate validation.
 
-### Option A: Build On The Server
+## First deployment
 
-On your server:
-
-```bash
-git clone https://github.com/YOUR_NAME/YOUR_BLOG_REPO.git
-cd YOUR_BLOG_REPO
-```
-
-Customize the blog if you have not already done it:
+1. Run `npm install` and `npm run setup` locally. Enter your final public URL, such as `https://blog.example.com`, for the site URL.
+2. Preview with `npm run dev`, then create the deployment archive:
 
 ```bash
-npm install
-npm run setup -- --siteUrl "https://blog.example.com"
+npm run package:deploy
 ```
 
-Build and start the container:
+3. Upload the generated `release/rpg-blog-*.tar.gz` archive using SFTP, a server panel, or another file-transfer tool. On the server:
 
 ```bash
-SITE_URL=https://blog.example.com docker compose up -d --build
+tar -xzf rpg-blog-*.tar.gz
+cd rpg-blog-*
+sudo ./install.sh
 ```
 
-The default compose file maps the site to `http://SERVER_IP:4321`. To serve directly on port `80`, change the port mapping to `"80:80"` or run a plain container:
+## Publishing updates
 
-```bash
-docker build --build-arg SITE_URL=https://blog.example.com -t my-rpg-blog .
-docker run -d --name rpg-blog --restart unless-stopped -p 80:80 my-rpg-blog
-```
+Create a post locally with `npm run new:post`, edit the generated Markdown, preview it, then run `npm run package:deploy` again. Upload the new archive and run `sudo ./install.sh` again on the server. The script replaces the blog container while retaining Caddy certificate data.
 
-### Option B: Build Locally And Pull On The Server
+This is a static blog: posts are compiled into the Docker image. It intentionally does not include an online editor, database, or web upload feature.
 
-Build and push the image from your local machine or CI:
+## Troubleshooting
 
-```bash
-docker build --build-arg SITE_URL=https://blog.example.com -t ghcr.io/YOUR_NAME/my-rpg-blog:latest .
-docker push ghcr.io/YOUR_NAME/my-rpg-blog:latest
-```
-
-On the server:
-
-```bash
-docker pull ghcr.io/YOUR_NAME/my-rpg-blog:latest
-docker run -d --name rpg-blog --restart unless-stopped -p 80:80 ghcr.io/YOUR_NAME/my-rpg-blog:latest
-```
-
-When you publish new posts or change config, rebuild the image and restart the container.
-
-## Remote Server Without Docker
-
-Use this path when you want to serve static files directly with an existing Nginx setup.
-
-Build locally or in CI:
-
-```bash
-npm install
-SITE_URL=https://blog.example.com npm run build
-```
-
-Upload `dist/` to the server:
-
-```bash
-rsync -av --delete dist/ user@SERVER_IP:/var/www/rpg-blog/
-```
-
-Minimal Nginx server block:
-
-```nginx
-server {
-  listen 80;
-  server_name blog.example.com;
-
-  root /var/www/rpg-blog;
-  index index.html;
-
-  location / {
-    try_files $uri $uri/ /404.html;
-  }
-}
-```
-
-After updating the Nginx config:
-
-```bash
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-For HTTPS, put the same static site behind your normal TLS setup, reverse proxy, CDN, or certificate manager.
-
-## Static Platforms
-
-The generated `dist/` folder also works on common static platforms:
-
-- Netlify
-- Vercel static output
-- Cloudflare Pages
-- GitHub Pages
-- any Nginx or object-storage static site
-
-Build command:
-
-```bash
-npm run build
-```
-
-Publish directory:
-
-```text
-dist
-```
-
-## Smoke Checks
-
-Before publishing:
-
-```bash
-npm run check
-npm run check:template
-```
-
-After building:
-
-```bash
-npm run test:visual
-```
+- Certificate failure: verify that DNS points to the server and nothing else uses ports 80/443.
+- Status: `sudo docker compose --project-name rpg-blog --project-directory /opt/rpg-blog ps`
+- Logs: `sudo docker compose --project-name rpg-blog --project-directory /opt/rpg-blog logs -f`
