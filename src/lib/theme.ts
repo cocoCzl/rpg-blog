@@ -96,8 +96,8 @@ export const themePresets: Record<ThemePresetName, ThemePreset> = {
     accent: '#F4D142',
     muted: '#F6E7F4',
     shadow: '8px 8px 0 #111111',
-    heading: '"Press Start 2P", "Noto Sans SC", ui-monospace, monospace',
-    body: '"Alegreya Sans", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif',
+    heading: '"Press Start 2P", ui-monospace, monospace',
+    body: '"Alegreya Sans", ui-sans-serif, system-ui, sans-serif',
     mono: '"Press Start 2P", "Courier New", ui-monospace, monospace',
   },
 }

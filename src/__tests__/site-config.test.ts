@@ -40,6 +40,11 @@ describe('site config', () => {
     expect(typeof config.display.showToolbox).toBe('boolean')
   })
 
+  it('uses a valid positive archive page size', () => {
+    expect(Number.isInteger(config.postsPerPage)).toBe(true)
+    expect(config.postsPerPage).toBeGreaterThan(0)
+  })
+
   it('does not expose removed backend feature flags', () => {
     expect('features' in config).toBe(false)
     expect('comments' in config).toBe(false)

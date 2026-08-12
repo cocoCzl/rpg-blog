@@ -12,7 +12,8 @@ What are you trying to build or customize?
 
 ## Current setup
 
-- Template profile: plain / comments / rpg / manual
+- Template version or commit:
+- Local customization or Docker deployment:
 - Deployment target:
 - Relevant config changed:
 

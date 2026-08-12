@@ -73,6 +73,25 @@ export function groupPostsByYear(posts: PostEntry[]): { year: string; posts: Pos
   return Array.from(groups, ([year, groupedPosts]) => ({ year, posts: groupedPosts }))
 }
 
+export function paginatePosts(posts: PostEntry[], page: number, perPage: number) {
+  const safePerPage = normalizePostsPerPage(perPage)
+  const published = getPublishedPosts(posts)
+  const totalPages = Math.max(1, Math.ceil(published.length / safePerPage))
+  const currentPage = Math.min(Math.max(1, Math.trunc(page) || 1), totalPages)
+  const start = (currentPage - 1) * safePerPage
+  return {
+    posts: published.slice(start, start + safePerPage),
+    currentPage,
+    totalPages,
+    previousUrl: currentPage > 1 ? (currentPage === 2 ? '/archive' : `/archive/${currentPage - 1}`) : undefined,
+    nextUrl: currentPage < totalPages ? `/archive/${currentPage + 1}` : undefined,
+  }
+}
+
+export function normalizePostsPerPage(value: number): number {
+  return Number.isInteger(value) && value > 0 ? value : 6
+}
+
 export function getAdjacentPosts(posts: PostEntry[], current: PostEntry): { previous?: PostEntry; next?: PostEntry } {
   const published = getPublishedPosts(posts)
   const index = published.findIndex((post) => getPostSlug(post) === getPostSlug(current))

@@ -33,7 +33,7 @@ Review conflicts in these files as template behavior changes, not personal conte
 git remote add upstream https://github.com/UPSTREAM_OWNER/rpg-blog.git
 git fetch upstream
 git merge upstream/main
-npm install
+npm ci
 npm run check
 npm run check:template
 ```

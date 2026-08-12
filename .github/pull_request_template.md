@@ -5,10 +5,11 @@
 ## Checks
 
 - [ ] `npm run check`
-- [ ] `npm run test:integration` when API, auth, comments, uploads, or routing changed
+- [ ] `npm run check:template`
+- [ ] `npm run test:visual` after UI or routing changes
 - [ ] Documentation updated when setup, config, deployment, or public behavior changed
 
 ## Template impact
 
 - [ ] Does not overwrite downstream content or branding unexpectedly
-- [ ] Keeps feature toggles working for `plain`, `comments`, and `rpg`
+- [ ] Keeps display toggles, empty content, and downstream user content safe

@@ -21,7 +21,8 @@ Describe the issue and what you expected instead.
 - Node version:
 - Package manager:
 - Deployment target:
-- Template profile: plain / comments / rpg / manual
+- Template version or commit:
+- CPU architecture: amd64 / arm64
 
 ## Logs
 

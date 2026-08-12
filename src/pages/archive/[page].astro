@@ -1,0 +1,19 @@
+---
+import { getCollection } from 'astro:content'
+import ArchivePage from '../../components/ArchivePage.astro'
+import config from '../../../site.config'
+import { getPublishedPosts, normalizePostsPerPage, paginatePosts } from '../../lib/posts'
+
+export async function getStaticPaths() {
+  const posts = getPublishedPosts(await getCollection('posts'))
+  const totalPages = Math.max(1, Math.ceil(posts.length / normalizePostsPerPage(config.postsPerPage)))
+  return Array.from({ length: Math.max(0, totalPages - 1) }, (_, index) => ({
+    params: { page: String(index + 2) },
+  }))
+}
+
+const pageNumber = Number(Astro.params.page)
+const page = paginatePosts(await getCollection('posts'), pageNumber, config.postsPerPage)
+---
+
+<ArchivePage {...page} />

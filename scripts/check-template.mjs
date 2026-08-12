@@ -32,6 +32,8 @@ const publicDocs = [
   'DEPLOYMENT.md',
   'UPGRADING.md',
   'TEMPLATE_SCOPE.md',
+  'SECURITY.md',
+  'ASSET_LICENSES.md',
 ]
 
 const forbiddenPublicTerms = [
@@ -82,6 +84,11 @@ const requiredAssets = [
   'public/images/build-log-cover.webp',
   'public/images/toolbox-cover.webp',
 ]
+
+const requiredPublicFiles = ['LICENSE', 'SECURITY.md', 'CHANGELOG.md', 'ASSET_LICENSES.md', 'GITHUB_RELEASE.md', '.github/dependabot.yml']
+for (const file of requiredPublicFiles) {
+  addCheck(`public template file exists: ${file}`, existsSync(file), `Add ${file} before publishing the template.`)
+}
 
 for (const asset of requiredAssets) {
   const ok = existsSync(asset) && (await stat(asset)).size > 0

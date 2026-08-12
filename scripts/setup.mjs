@@ -2,7 +2,7 @@ import { access, readFile, writeFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { createInterface } from 'node:readline/promises'
 import { stdin as input, stdout as output } from 'node:process'
-import { applyContentMode, normalizeContentMode } from './setup-content.mjs'
+import { applyContentMode, CONTENT_MODES, listMarkdownFiles, normalizeContentMode, recommendContentMode } from './setup-content.mjs'
 
 const siteConfigPath = new URL('../site.config.ts', import.meta.url)
 const envExamplePath = new URL('../.env.example', import.meta.url)
@@ -48,7 +48,7 @@ const defaults = {
   toolbox2DetailZh: '存放正在打磨的作品、实验和可复用资源。',
   toolbox2DetailEn: 'Works, experiments, and reusable resources currently being refined.',
   toolbox2Href: '',
-  content: 'keep',
+  content: 'starter',
   wizardLocale: 'zh',
 }
 
@@ -200,13 +200,21 @@ function parseBoolean(value, fallback = true) {
   return ['1', 'true', 'yes', 'y', 'on'].includes(normalized)
 }
 
-async function promptForConfig(args) {
-  if (args.nonInteractive === 'true') return { ...defaults, ...args }
+async function promptForConfig(args, recommendedContentMode) {
+  if (args.nonInteractive === 'true') {
+    if (!Object.hasOwn(args, 'content')) {
+      throw new Error('Non-interactive setup requires an explicit --content keep, starter, or clear option.')
+    }
+    if (!CONTENT_MODES.includes(String(args.content).toLowerCase())) {
+      throw new Error('Invalid --content option. Choose keep, starter, or clear.')
+    }
+    return { ...defaults, content: recommendedContentMode, ...args }
+  }
 
   const rl = createInterface({ input, output })
-  async function ask(key, label) {
-    const value = await rl.question(`${label} [${defaults[key]}]: `)
-    return value.trim() || defaults[key]
+  async function ask(key, label, fallback = defaults[key]) {
+    const value = await rl.question(`${label} [${fallback}]: `)
+    return value.trim() || fallback
   }
 
   try {
@@ -253,7 +261,7 @@ async function promptForConfig(args) {
       toolbox2DetailZh: await ask('toolbox2DetailZh', labels.toolbox2DetailZh),
       toolbox2DetailEn: await ask('toolbox2DetailEn', labels.toolbox2DetailEn),
       toolbox2Href: await ask('toolbox2Href', labels.toolbox2Href),
-      content: await ask('content', labels.content),
+      content: await ask('content', labels.content, recommendedContentMode),
     }
   } finally {
     rl.close()
@@ -385,10 +393,25 @@ export default config
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
-  const rawConfig = await promptForConfig(args)
+  const recommendedContentMode = await recommendContentMode(postsDirPath)
+  const rawConfig = await promptForConfig(args, recommendedContentMode)
   const text = getWizardText(rawConfig.wizardLocale)
   const current = await readFile(siteConfigPath, 'utf8')
   const { source, config } = buildSiteConfigSource(current, rawConfig)
+
+  if (args.nonInteractive !== 'true' && config.contentMode !== 'keep') {
+    const files = await listMarkdownFiles(postsDirPath)
+    if (files.length > 0) {
+      const rl = createInterface({ input, output })
+      try {
+        output.write(`\n${config.contentMode === 'clear' ? 'Remove' : 'Replace'}: ${files.join(', ')}\n`)
+        const answer = (await rl.question('Continue? (yes/no) [no]: ')).trim().toLowerCase()
+        if (!['y', 'yes'].includes(answer)) throw new Error('Setup cancelled; no files were changed.')
+      } finally {
+        rl.close()
+      }
+    }
+  }
 
   await writeFile(siteConfigPath, source, 'utf8')
   await ensureEnvFile()
@@ -401,8 +424,9 @@ async function main() {
 
   const contentResult = await applyContentMode({
     postsDir: postsDirPath,
-    siteTitle: config.titleZh,
-    authorName: config.authorZh,
+    siteTitle: config.locale === 'en' ? config.titleEn : config.titleZh,
+    authorName: config.locale === 'en' ? config.authorEn : config.authorZh,
+    locale: config.locale,
     mode: config.contentMode,
   })
 

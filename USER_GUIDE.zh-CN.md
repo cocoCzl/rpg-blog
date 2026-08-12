@@ -160,7 +160,7 @@ npm run dev
 创建部署包：
 
 ```bash
-npm run package:deploy
+npm run package:deploy -- --platform linux/amd64
 ```
 
 线上部署使用这个命令生成的 Docker 压缩包，不需要把博客长期放在自己电脑上跑。

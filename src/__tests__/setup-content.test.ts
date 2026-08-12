@@ -33,6 +33,26 @@ describe('setup content helpers', () => {
     expect(post).not.toMatch(/site\.config|Docker|OAuth|SQLite|template/i)
   })
 
+  it('builds an English starter post for an English default site', async () => {
+    const { buildStarterPost } = await import('../../scripts/setup-content.mjs')
+    const post = buildStarterPost({ siteTitle: 'My Guild', authorName: 'Alex', locale: 'en', date: '2026-06-15' })
+    expect(post).toContain('title: "First Commission: Open the Guild Journal"')
+    expect(post).toContain('Welcome to **My Guild**')
+    expect(post).toContain('Scribe: Alex')
+  })
+
+  it('recommends starter only for an untouched sample or empty directory', async () => {
+    const { DEFAULT_SAMPLE_FILES, recommendContentMode } = await import('../../scripts/setup-content.mjs')
+    const dir = await mkdtemp(join(tmpdir(), 'rpg-blog-posts-'))
+    const postsDir = pathToFileURL(`${dir}/`)
+    expect(await recommendContentMode(postsDir)).toBe('starter')
+    await Promise.all(DEFAULT_SAMPLE_FILES.map((file) => writeFile(new URL(file, postsDir), 'sample', 'utf8')))
+    expect(await recommendContentMode(postsDir)).toBe('starter')
+    await writeFile(new URL('my-post.md', postsDir), 'mine', 'utf8')
+    expect(await recommendContentMode(postsDir)).toBe('keep')
+    await rm(dir, { recursive: true, force: true })
+  })
+
   it('keeps existing posts when requested', async () => {
     const { applyContentMode } = await import('../../scripts/setup-content.mjs')
     const dir = await mkdtemp(join(tmpdir(), 'rpg-blog-posts-'))

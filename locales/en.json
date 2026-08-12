@@ -42,7 +42,11 @@
   },
   "archive": {
     "title": "Journal Archive",
-    "description": "Every saved adventure journal entry from the guild, organized by time."
+    "description": "Every saved adventure journal entry from the guild, organized by time.",
+    "empty": "No published journal entries yet.",
+    "pagination": "Journal pagination",
+    "previous": "Previous page",
+    "next": "Next page"
   },
   "tags": {
     "title": "Clue Board",

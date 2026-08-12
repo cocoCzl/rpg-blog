@@ -2,6 +2,13 @@ import { access, mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 
 export const CONTENT_MODES = ['keep', 'starter', 'clear']
+export const DEFAULT_SAMPLE_FILES = [
+  'chapter-route-map.md',
+  'evening-save-point.md',
+  'guild-first-commission.md',
+  'inventory-writing-rhythm.md',
+  'map-table-rain.md',
+]
 
 export function normalizeContentMode(value) {
   const normalized = value.trim().toLowerCase()
@@ -22,8 +29,38 @@ export function slugify(value) {
 export function buildStarterPost({
   siteTitle,
   authorName,
+  locale = 'zh',
   date = new Date().toISOString().slice(0, 10),
 }) {
+  if (locale === 'en') {
+    return `---
+title: "First Commission: Open the Guild Journal"
+date: ${date}
+updated: ${date}
+tags: ["writing", "journal"]
+category: "Departure"
+summary: "The first journal entry from ${siteTitle}."
+draft: false
+featured: true
+---
+
+Welcome to **${siteTitle}**.
+
+This is the first note pinned in the guild hall. Future journal entries will collect writing, reading, tools, projects, and everyday adventures.
+
+## Open paths
+
+- Command Menu
+- Quest Board
+- Recent Saves
+- Chapters and Clues
+
+The interface feels like a JRPG menu, while the journal stays a fast, static personal blog.
+
+Scribe: ${authorName}
+`
+  }
+
   return `---
 title: "第一份委托：把博客开成公会菜单"
 date: ${date}
@@ -54,6 +91,20 @@ featured: true
 `
 }
 
+export async function listMarkdownFiles(postsDir) {
+  await mkdir(postsDir, { recursive: true })
+  return (await readdir(postsDir))
+    .filter((file) => file.endsWith('.md') || file.endsWith('.mdx'))
+    .sort()
+}
+
+export async function recommendContentMode(postsDir) {
+  const files = await listMarkdownFiles(postsDir)
+  const isUntouchedSample = files.length === DEFAULT_SAMPLE_FILES.length
+    && files.every((file, index) => file === DEFAULT_SAMPLE_FILES[index])
+  return isUntouchedSample || files.length === 0 ? 'starter' : 'keep'
+}
+
 async function pathExists(path) {
   try {
     await access(path, constants.F_OK)
@@ -76,9 +127,7 @@ async function getAvailableMarkdownFilename(postsBase, preferredSlug) {
 }
 
 async function clearMarkdown(postsDir) {
-  await mkdir(postsDir, { recursive: true })
-  const files = await readdir(postsDir)
-  const markdownFiles = files.filter((file) => file.endsWith('.md') || file.endsWith('.mdx'))
+  const markdownFiles = await listMarkdownFiles(postsDir)
   const postsBase = postsDir.href.endsWith('/') ? postsDir.href : `${postsDir.href}/`
   await Promise.all(markdownFiles.map((file) => rm(new URL(file, postsBase), { force: true })))
   return markdownFiles
@@ -88,6 +137,7 @@ export async function applyContentMode({
   postsDir,
   siteTitle,
   authorName,
+  locale = 'zh',
   mode,
 }) {
   await mkdir(postsDir, { recursive: true })
@@ -105,7 +155,7 @@ export async function applyContentMode({
   const postsBase = postsDir.href.endsWith('/') ? postsDir.href : `${postsDir.href}/`
   const preferredSlug = slugify('guild-first-commission')
   const createdFile = await getAvailableMarkdownFilename(postsBase, preferredSlug)
-  const starterPost = buildStarterPost({ siteTitle, authorName })
+  const starterPost = buildStarterPost({ siteTitle, authorName, locale })
   await writeFile(new URL(createdFile, postsBase), starterPost, 'utf8')
 
   return {

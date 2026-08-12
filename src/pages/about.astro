@@ -25,7 +25,7 @@ const socialLinks = Object.entries(config.social).filter(([, href]) => href)
       <h2 class="section-title">{siteText.description}</h2>
       <p class="post-summary">{siteText.homeIntro}</p>
       {config.author.avatar ? (
-        <img src={config.author.avatar} alt="" class="optional-cover" loading="lazy" />
+        <img src={config.author.avatar} alt={siteText.authorName} class="optional-cover" loading="lazy" />
       ) : (
         <div class="no-cover-mark" aria-hidden="true">Profile</div>
       )}

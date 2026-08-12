@@ -1,5 +1,10 @@
 ---
 import '../styles/global.css'
+import '@fontsource/alegreya-sans/400.css'
+import '@fontsource/alegreya-sans/500.css'
+import '@fontsource/alegreya-sans/700.css'
+import '@fontsource/alegreya-sans/800.css'
+import '@fontsource/press-start-2p'
 import config from '../../site.config'
 import { t } from '../lib/i18n'
 import { formatDate, localized, resolveLocale, type SupportedLocale } from '../lib/locale'
@@ -22,7 +27,7 @@ const preset = themePresets[config.theme.preset]
 const pageTitle = Astro.props.title ? `${Astro.props.title} - ${siteText.title}` : siteText.title
 const pageDesc = Astro.props.description || siteText.description
 const canonicalUrl = Astro.props.canonicalUrl || `${config.siteUrl.replace(/\/$/, '')}${Astro.url.pathname !== '/' ? Astro.url.pathname : ''}`
-const ogImage = Astro.props.ogImage || `${config.siteUrl.replace(/\/$/, '')}/og-image?title=${encodeURIComponent(Astro.props.title || siteText.title)}`
+const ogImage = Astro.props.ogImage || `${config.siteUrl.replace(/\/$/, '')}/og/home.png`
 const jsonLdStr = Astro.props.jsonLd ? JSON.stringify(Astro.props.jsonLd) : ''
 const backgroundImage = config.theme.backgroundImage ? `url('${config.theme.backgroundImage}')` : 'none'
 const cssVars = `:root {
@@ -45,9 +50,9 @@ const cssVars = `:root {
 }`
 const navItems = [
   { href: '/', key: 'nav.home' },
-  { href: '/archive', key: 'nav.archive' },
-  { href: '/tags', key: 'nav.tags' },
-  { href: '/about', key: 'nav.about' },
+  ...(config.display.showArchive ? [{ href: '/archive', key: 'nav.archive' }] : []),
+  ...(config.display.showTags ? [{ href: '/tags', key: 'nav.tags' }] : []),
+  ...(config.display.showAbout ? [{ href: '/about', key: 'nav.about' }] : []),
 ]
 const translations = {
   zh: {
@@ -74,7 +79,7 @@ function flattenTranslations(activeLocale: SupportedLocale) {
     'home.journal_entry', 'home.quest_log', 'home.read_more', 'home.continue', 'home.profile', 'home.status', 'home.slot_empty',
     'blog.back_home', 'blog.previous', 'blog.next', 'blog.written_by', 'blog.about_post',
     'blog.published', 'blog.updated', 'blog.category', 'blog.tags',
-    'archive.title', 'archive.description',
+    'archive.title', 'archive.description', 'archive.empty', 'archive.pagination', 'archive.previous', 'archive.next',
     'tags.title', 'tags.description', 'tags.posts_with_tag',
     'about.title', 'about.focus', 'about.quest_log', 'about.social', 'about.no_social',
     'system.skip_to_content',
@@ -92,9 +97,6 @@ function flattenTranslations(activeLocale: SupportedLocale) {
     <title>{pageTitle}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={canonicalUrl} />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700;800&family=Cinzel:wght@700;800&family=Press+Start+2P&display=swap" rel="stylesheet" />
     <meta name="author" content={siteText.authorName} />
     <meta property="og:locale" content={locale === 'zh' ? 'zh_CN' : 'en_US'} />
     <meta property="og:site_name" content={siteText.title} />
@@ -167,7 +169,10 @@ function flattenTranslations(activeLocale: SupportedLocale) {
       const canvas = document.getElementById('ambiance-canvas')
       const ctx = canvas?.getContext('2d')
       const activeEffects = new Set(effects)
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       let particles = []
+      let frameId
+      let suspended = false
 
       function resize() {
         if (!canvas || !ctx) return
@@ -185,7 +190,7 @@ function flattenTranslations(activeLocale: SupportedLocale) {
       }
 
       function draw() {
-        if (!canvas || !ctx) return
+        if (!canvas || !ctx || reduceMotion || document.hidden) return
         ctx.clearRect(0, 0, canvas.width, canvas.height)
         if (activeEffects.has('embers') || activeEffects.has('stars')) {
           for (const p of particles) {
@@ -200,12 +205,12 @@ function flattenTranslations(activeLocale: SupportedLocale) {
             ctx.shadowBlur = 0
           }
         }
-        requestAnimationFrame(draw)
+        frameId = requestAnimationFrame(draw)
       }
 
       function createFallingEffect(kind) {
         const root = document.getElementById('falling-effects')
-        if (!root) return
+        if (!root || reduceMotion) return
         const glyph = kind === 'mist' ? '▒' : '✦'
         for (let i = 0; i < 26; i += 1) {
           const item = document.createElement('span')
@@ -219,8 +224,18 @@ function flattenTranslations(activeLocale: SupportedLocale) {
       }
 
       window.addEventListener('resize', resize)
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && frameId) {
+          cancelAnimationFrame(frameId)
+          suspended = true
+        }
+        if (!document.hidden && !reduceMotion && suspended) {
+          suspended = false
+          draw()
+        }
+      })
       resize()
-      draw()
+      if (!reduceMotion && activeEffects.size > 0) draw()
       if (activeEffects.has('mist')) createFallingEffect('mist')
     </script>
   </body>

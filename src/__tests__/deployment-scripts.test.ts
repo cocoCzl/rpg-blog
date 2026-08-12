@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildPostSource, normalizeSlug } from '../../scripts/new-post.mjs'
-import { getDeploymentSite, readEnvValue, renderCaddyfile, renderCompose } from '../../scripts/package-deploy.mjs'
+import { getDeploymentSite, normalizePlatform, parsePlatform, readEnvValue, renderCaddyfile, renderCompose } from '../../scripts/package-deploy.mjs'
 
 describe('deployment package helpers', () => {
   it('reads and validates a public HTTPS site URL', () => {
@@ -14,7 +14,22 @@ describe('deployment package helpers', () => {
   it('renders an isolated Caddy deployment', () => {
     expect(renderCompose()).toContain('rpg_blog_caddy_data')
     expect(renderCompose()).toContain('"443:443"')
-    expect(renderCaddyfile('blog.example.com')).toContain('reverse_proxy blog:80')
+    expect(renderCompose()).toContain('read_only: true')
+    expect(renderCompose()).toContain('condition: service_healthy')
+    expect(renderCaddyfile('blog.example.com')).toContain('reverse_proxy blog:8080')
+  })
+
+  it('accepts only supported Linux deployment platforms', () => {
+    expect(normalizePlatform('linux/amd64')).toBe('linux/amd64')
+    expect(normalizePlatform('linux/arm64')).toBe('linux/arm64')
+    expect(parsePlatform([])).toBe('linux/amd64')
+    expect(parsePlatform(['--platform', 'linux/arm64'])).toBe('linux/arm64')
+    expect(() => normalizePlatform('linux/386')).toThrow('不支持的平台')
+  })
+
+  it('keeps deployment commands free of shell interpolation', () => {
+    expect(renderCaddyfile('blog.example.com')).toBe('blog.example.com {\n  encode zstd gzip\n  reverse_proxy blog:8080\n}\n')
+    expect(renderCompose()).not.toContain('privileged:')
   })
 })
 

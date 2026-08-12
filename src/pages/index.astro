@@ -17,11 +17,12 @@ const chapters = getAllCategories(posts).slice(0, 5)
 const clues = getAllTags(posts).slice(0, 8)
 const socialLinks = Object.entries(config.social).filter(([, href]) => href)
 const commandItems = [
-  { href: '/archive', label: t('nav.posts', locale), icon: 'journal' as const },
+  ...(config.display.showArchive ? [{ href: '/archive', label: t('nav.posts', locale), icon: 'journal' as const }] : []),
   { href: '/chapters', label: t('home.regions', locale), icon: 'chapter' as const },
-  { href: '/tags', label: t('home.clues', locale), icon: 'clue' as const },
-  { href: '/about', label: t('home.profile', locale), icon: 'profile' as const },
+  ...(config.display.showTags ? [{ href: '/tags', label: t('home.clues', locale), icon: 'clue' as const }] : []),
+  ...(config.display.showAbout ? [{ href: '/about', label: t('home.profile', locale), icon: 'profile' as const }] : []),
 ]
+const primaryHref = pinned ? `/posts/${getPostSlug(pinned)}` : (config.display.showArchive ? '/archive' : '/chapters')
 ---
 
 <BaseLayout>
@@ -47,7 +48,7 @@ const commandItems = [
       <p class="eyebrow" id="character-slot-title" data-i18n="home.about">{t('home.about', locale)}</p>
       <div class="profile-mini">
         <div class="profile-avatar" aria-hidden="true">
-          {config.author.avatar ? <img src={config.author.avatar} alt="" /> : <span class="avatar-sprite"></span>}
+          {config.author.avatar ? <img src={config.author.avatar} alt={siteText.authorName} /> : <span class="avatar-sprite"></span>}
         </div>
         <div>
           <strong data-author-name>{siteText.authorName}</strong>
@@ -61,8 +62,8 @@ const commandItems = [
       <h1 id="guild-title" class="retro-title" data-site-title>{siteText.title}</h1>
       <p class="retro-subtitle" data-site-description>{siteText.description}</p>
       <div class="hero-actions">
-        <a class="pixel-button primary" href={pinned ? `/posts/${getPostSlug(pinned)}` : '/archive'} data-i18n="home.read_more">{t('home.read_more', locale)}</a>
-        <a class="pixel-button" href="/about" data-i18n="home.profile">{t('home.profile', locale)}</a>
+        <a class="pixel-button primary" href={primaryHref} data-i18n="home.read_more">{t('home.read_more', locale)}</a>
+        {config.display.showAbout && <a class="pixel-button" href="/about" data-i18n="home.profile">{t('home.profile', locale)}</a>}
       </div>
     </div>
 
@@ -74,12 +75,12 @@ const commandItems = [
       </a>
     )}
 
-    <aside class="floating-card floating-clues tilt-right-soft">
+    {config.display.showTags && <aside class="floating-card floating-clues tilt-right-soft">
       <p class="eyebrow" data-i18n="home.clues">{t('home.clues', locale)}</p>
       <div class="tag-list">
         {clues.slice(0, 5).map(({ tag }) => <a class="badge" href={`/tags/${encodeURIComponent(tag)}`}>#{tag}</a>)}
       </div>
-    </aside>
+    </aside>}
   </section>
 
   <section class="container retro-section" aria-labelledby="save-slots-title">
@@ -87,6 +88,7 @@ const commandItems = [
       <h2 class="section-title" data-i18n="home.latest">{t('home.latest', locale)}</h2>
       <div class="section-actions" aria-label="Guild journal shortcuts">
         <a class="toolbar-link" href="/chapters" data-i18n="home.regions">{t('home.regions', locale)}</a>
+        {config.display.showArchive && <a class="toolbar-link" href="/archive" data-i18n="nav.archive">{t('nav.archive', locale)}</a>}
         {socialLinks.length > 0 && <a class="toolbar-link" href="#public-links" data-i18n="home.mailbox">{t('home.mailbox', locale)}</a>}
         <a class="toolbar-link" href="/feed.xml" data-i18n="home.rss_feed">{t('home.rss_feed', locale)}</a>
       </div>

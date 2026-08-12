@@ -1,146 +1,81 @@
 # rpg-blog
 
-一个基于 Astro 的静态优先像素 JRPG 公会手札博客模板。默认首页像 RPG 存档板菜单：指令菜单、角色档案槽、任务板置顶手札、最近存档、章节、线索、角色档案和可选的道具栏工具箱。
+一个基于 Astro、Markdown 和离线 Docker 部署的静态优先像素 JRPG 个人博客模板。
 
-它适合想让个人博客在 GitHub 上有明显视觉记忆点，同时仍然保持静态部署简单性的使用者。
+[English](./README.md) · [个性化](./CUSTOMIZATION.zh-CN.md) · [部署](./DEPLOYMENT.zh-CN.md) · [后续升级](./UPGRADING.md)
 
-## 亮点
+## 特色
 
-- JRPG 公会菜单首页，而不是普通博客 hero
-- Save Board 布局：Command Menu、Character Slot、Quest Board、Save Slots
-- 暗色像素 RPG 菜单配色，背景只负责公会氛围
-- 使用手札条目、章节、线索、角色档案、道具栏工具箱等公开语言
-- 中文和英文 UI chrome
-- Astro Content Collections 管理 Markdown/MDX 内容
-- RSS、sitemap、robots.txt、Open Graph 和 Docker 一键部署包
-- 接入 React 与 Pxlkit，用于像素图标渲染
+- 公会菜单式首页：任务板、最近存档、章节、线索和角色档案
+- Markdown/MDX、草稿、置顶、RSS、sitemap 和每篇文章独立的 Open Graph 图片
+- 中英文界面标签；文章与 SEO 使用配置的默认语言
+- 初始化与发文向导，并安全处理已有内容
+- 字体完全本地化，支持系统“减少动态效果”设置
+- 面向 `linux/amd64` 和 `linux/arm64` 的带校验离线 Docker 包
 
-## 快速开始
+## 创建自己的博客
 
-需要 Node.js `>=22`。
+使用 GitHub 的 **Use this template**、下载源码 ZIP，或者 clone：
 
 ```bash
-npm install
-npm run dev
-```
-
-打开 `http://localhost:4321`。
-
-## 通过模板创建自己的博客
-
-下面步骤用于本地准备和预览，不是线上部署方式。`npm run dev` 只适合在自己的电脑或临时开发环境里检查效果。
-
-1. 在 GitHub 点击 **Use this template** 创建你自己的仓库，或者手动 fork 后 clone。
-2. clone 你的仓库并进入项目目录。
-3. 安装依赖：
-
-```bash
-npm install
-```
-
-4. 运行初始化向导，把默认公会信息替换成你的博客信息：
-
-```bash
+git clone https://github.com/cocoCzl/rpg-blog.git my-blog
+cd my-blog
+npm ci
+npm run doctor
 npm run setup
-```
-
-交互式向导会先询问提示语言。输入 `zh` 使用中文提示，输入 `en` 使用英文提示。
-
-也可以使用非交互式初始化：
-
-```bash
-npm run setup -- --yes --wizardLocale zh --titleZh "我的博客" --titleEn "My Blog" --content starter
-```
-
-5. 启动本地开发服务器：
-
-```bash
 npm run dev
 ```
 
-打开 `http://localhost:4321`，检查首页、角色档案、章节、线索和手札条目。
+需要 Node.js `>=22.12.0`。打开 `http://localhost:4321`。
 
-确认本地效果后，按“Docker 一键部署”生成可上传到服务器的部署包。
+在未经修改的模板上，初始化向导默认建议把五篇演示文章替换成一篇欢迎文章；检测到自己的文章后会建议保留。选择 `starter` 或 `clear` 时，向导会先列出将被处理的文件并要求确认。
 
-## Guild Setup Wizard
+非交互式初始化必须明确指定内容模式：
 
 ```bash
-npm run setup -- --yes --wizardLocale zh --titleZh "企鹅工会" --titleEn "Penguin Guild" --content starter
+npm run setup -- --yes --content starter --wizardLocale zh --titleZh "我的博客" --titleEn "My Blog"
 ```
 
-向导会配置站点名称、角色档案、默认语言、头像、社交链接、道具栏工具箱显示状态和起始手札内容。它会更新 `site.config.ts`，创建或更新 `.env`，并且可以处理 `src/content/posts/` 里的文章文件。
+## 写作与个性化
 
-内容模式：
-
-- `keep`：保留现有手札条目。
-- `starter`：清空现有条目，并为你的博客创建一篇起始手札。
-- `clear`：移除现有条目，让博客保持空内容状态。
-
-## 写第一篇文章
-
-推荐运行文章向导：
+创建草稿：
 
 ```bash
 npm run new:post
 ```
 
-向导会创建 `src/content/posts/` 下的 Markdown 草稿。也可以手动新建 Markdown 或 MDX 文件。
+主要个人设置位于 `site.config.ts`，文章位于 `src/content/posts/`，图片放在 `public/images/`。完整说明见 [CUSTOMIZATION.zh-CN.md](./CUSTOMIZATION.zh-CN.md) 和 [USER_GUIDE.zh-CN.md](./USER_GUIDE.zh-CN.md)。
 
-把 Markdown 或 MDX 文件放到 `src/content/posts/`。
+语言按钮会切换界面、站点身份和作者字段。文章正文、自定义近况/工具箱文字、canonical、RSS 和 Open Graph 使用构建时的默认语言。
 
-```md
----
-title: "我的第一篇手札"
-date: 2026-03-21
-summary: "显示在存档板上的简短摘要。"
-tags: ["写作", "记录"]
-category: "启程"
-featured: true
-draft: false
----
+## 使用 Docker 部署
 
-在这里写正文。
-```
-
-支持的 frontmatter 字段包括 `title`、`date`、`updated`、`summary`、`tags`、`category`、`cover`、`draft` 和 `featured`。
-
-如果你想了解首页每个按钮、每个模块的含义，以及如何组织文章、章节、线索和道具栏工具箱，见 [USER_GUIDE.zh-CN.md](./USER_GUIDE.zh-CN.md)。
-
-## 个性化配置
-
-大部分个人设置都在 `site.config.ts`：站点 URL、中英文标题、描述、作者名称、头像、简介、社交链接、默认语言、首页焦点内容、道具栏工具箱、背景图、氛围效果和导航显示状态。
-
-完整配置说明见 [CUSTOMIZATION.zh-CN.md](./CUSTOMIZATION.zh-CN.md)，英文版见 [CUSTOMIZATION.md](./CUSTOMIZATION.md)。
-
-## Docker 一键部署
-
-这是唯一支持的线上部署方式。先在本地完成配置和写作，再运行：
+在初始化时填入最终 HTTPS 域名，启动 Docker Desktop，然后按服务器 CPU 生成一个部署包：
 
 ```bash
-npm run package:deploy
+# 大多数普通云服务器
+npm run package:deploy -- --platform linux/amd64
+
+# ARM 云服务器或树莓派
+npm run package:deploy -- --platform linux/arm64
 ```
 
-它会在 `release/` 生成一个含 Docker 镜像、Caddy 和安装脚本的压缩包。上传到 Ubuntu/Debian 服务器、解压后执行 `sudo ./install.sh` 即可启动，Caddy 会自动配置 HTTPS。
+把 `release/` 中的压缩包上传到 Ubuntu/Debian 服务器，解压并运行 `sudo ./install.sh`。安装脚本会先验证文件校验值和 CPU 架构。服务器需要 Docker Engine、Compose 插件、开放 80/443 端口和正确 DNS；不需要 Git、Node、npm 或镜像仓库访问。
 
-完整条件、更新文章方式和排错方法见 [DEPLOYMENT.zh-CN.md](./DEPLOYMENT.zh-CN.md)。
-
-## 后续同步模板更新
-
-你的个人内容通常在 `site.config.ts`、`src/content/posts/`、`public/images/` 和 `.env`。后续拉取模板更新时，把这些文件视为用户自有内容。
-
-推荐更新流程见 [UPGRADING.md](./UPGRADING.md)。
-
-## 模板边界
-
-这是一个带 RPG 风格界面包装的静态博客模板。它不提供可玩 RPG 机制、可控制角色、战斗、账号、评论、数据库或后端游戏状态。
+完整说明见 [DEPLOYMENT.zh-CN.md](./DEPLOYMENT.zh-CN.md)。
 
 ## 检查
 
 ```bash
+npm run doctor
 npm run build
 npm test
 npm run check:template
 npm run test:visual
 ```
 
-`check:template` 会保护 JRPG Guild Menu 范围，拒绝旧视觉方向重新出现在公开源码和文档里。
+## 边界与许可
+
+这是静态博客模板，不是 CMS 或可玩的游戏；默认不包含账号、评论、数据库、管理后台或在线编辑器。见 [TEMPLATE_SCOPE.md](./TEMPLATE_SCOPE.md)。
+
+代码与原创美术使用 MIT 许可证，字体和依赖素材许可见 [ASSET_LICENSES.md](./ASSET_LICENSES.md)。

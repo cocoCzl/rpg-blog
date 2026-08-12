@@ -9,6 +9,8 @@ import {
   getPostsByCategory,
   getPublishedPosts,
   groupPostsByYear,
+  paginatePosts,
+  normalizePostsPerPage,
 } from '../lib/posts'
 
 function post(id: string, data: Record<string, unknown>) {
@@ -78,5 +80,13 @@ describe('post helpers', () => {
 
   it('returns previous and next posts by date order', () => {
     expect(getAdjacentPosts(posts, posts[1])).toEqual({ previous: undefined, next: posts[0] })
+  })
+
+  it('paginates published posts with stable archive URLs', () => {
+    const many = Array.from({ length: 7 }, (_, index) => post(`post-${index}.md`, { date: new Date(`2026-01-${String(index + 1).padStart(2, '0')}`) }))
+    expect(paginatePosts(many, 1, 6)).toMatchObject({ currentPage: 1, totalPages: 2, previousUrl: undefined, nextUrl: '/archive/2' })
+    expect(paginatePosts(many, 2, 6)).toMatchObject({ currentPage: 2, totalPages: 2, previousUrl: '/archive', nextUrl: undefined })
+    expect(paginatePosts([], 1, 0)).toMatchObject({ posts: [], currentPage: 1, totalPages: 1 })
+    expect(normalizePostsPerPage(0)).toBe(6)
   })
 })

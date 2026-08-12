@@ -2,6 +2,10 @@
 
 你主要通过 `site.config.ts`、Markdown/MDX 手札条目和可选静态资源来个性化 `rpg-blog`。
 
+`display.showAbout`、`showTags` 和 `showArchive` 会隐藏导航与首页入口，但对应静态 URL 仍然可访问。`postsPerPage` 控制归档分页，必须是正整数。
+
+语言按钮会切换界面标签、站点身份和作者字段；手札正文、自定义近况/工具箱、RSS 与 SEO 使用配置的默认语言。
+
 ## 站点身份
 
 编辑这些字段：

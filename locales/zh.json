@@ -42,7 +42,11 @@
   },
   "archive": {
     "title": "手札库",
-    "description": "按时间整理公会里留下的每一份冒险手札。"
+    "description": "按时间整理公会里留下的每一份冒险手札。",
+    "empty": "还没有公开的手札。",
+    "pagination": "手札分页",
+    "previous": "上一页",
+    "next": "下一页"
   },
   "tags": {
     "title": "线索板",

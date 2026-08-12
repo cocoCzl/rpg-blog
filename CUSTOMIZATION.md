@@ -2,6 +2,10 @@
 
 Customize `rpg-blog` through `site.config.ts`, Markdown/MDX Journal Entries, and optional static assets.
 
+`display.showAbout`, `showTags`, and `showArchive` hide navigation and homepage entry points; their static URLs remain available. `postsPerPage` controls archive pagination and must be a positive integer.
+
+The language button switches interface labels, site identity, and author fields. Journal Entries, custom focus/toolbox items, RSS, and SEO output use the configured default language.
+
 ## Identity
 
 Edit:

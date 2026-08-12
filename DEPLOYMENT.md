@@ -1,40 +1,42 @@
-# Docker Deployment Package
+# Offline Docker deployment
 
-`rpg-blog` is deployed only through its Docker deployment package. Configure and write locally, generate one archive, then upload it to the server. The server does not need Git, Node.js, npm, or registry access.
+Configure and write locally, then upload one architecture-specific package. The server does not need Git, Node.js, npm, or container-registry access.
 
 ## Requirements
 
-- Local machine: Node.js `>=22` and Docker Desktop.
-- Server: Ubuntu/Debian with Docker Engine and Docker Compose plugin.
-- A domain resolving to the server public IP, with TCP ports `80` and `443` open.
+- Local: Node.js `>=22.12.0`, Docker Engine/Desktop, and Docker Buildx.
+- Server: Ubuntu/Debian with Docker Engine and the Compose plugin.
+- A domain resolving to the server, with TCP ports 80 and 443 open.
 
-The package includes the blog image and a pinned Caddy image. Caddy obtains and renews HTTPS certificates automatically. The server needs internet access only for ACME certificate validation.
+## Build the package
 
-## First deployment
-
-1. Run `npm install` and `npm run setup` locally. Enter your final public URL, such as `https://blog.example.com`, for the site URL.
-2. Preview with `npm run dev`, then create the deployment archive:
+Enter the final URL, such as `https://blog.example.com`, during `npm run setup`. Then run:
 
 ```bash
-npm run package:deploy
+npm run doctor -- --deploy --platform linux/amd64
+npm run package:deploy -- --platform linux/amd64
 ```
 
-3. Upload the generated `release/rpg-blog-*.tar.gz` archive using SFTP, a server panel, or another file-transfer tool. On the server:
+Use `linux/arm64` for an ARM server. `amd64` is the default when `--platform` is omitted. The generated filename includes the architecture.
+
+The package contains the blog and Caddy images, Compose and Caddy configuration, a platform manifest, SHA-256 checksum, and installer.
+
+## Install or update
 
 ```bash
-tar -xzf rpg-blog-*.tar.gz
-cd rpg-blog-*
+tar -xzf rpg-blog-*-amd64.tar.gz
+cd rpg-blog-*-amd64
 sudo ./install.sh
 ```
 
-## Publishing updates
+The installer rejects corrupt archives and CPU mismatches, loads the offline images, waits for the blog to become healthy, and preserves Caddy certificate volumes across updates.
 
-Create a post locally with `npm run new:post`, edit the generated Markdown, preview it, then run `npm run package:deploy` again. Upload the new archive and run `sudo ./install.sh` again on the server. The script replaces the blog container while retaining Caddy certificate data.
-
-This is a static blog: posts are compiled into the Docker image. It intentionally does not include an online editor, database, or web upload feature.
+To publish changes, rebuild the matching package locally, upload it, and run the new installer again.
 
 ## Troubleshooting
 
-- Certificate failure: verify that DNS points to the server and nothing else uses ports 80/443.
+- Architecture: `uname -m` (`x86_64` means amd64; `aarch64` means arm64).
+- DNS: ensure the domain resolves to the server public IP.
+- Ports: nothing else may bind 80 or 443.
 - Status: `sudo docker compose --project-name rpg-blog --project-directory /opt/rpg-blog ps`
 - Logs: `sudo docker compose --project-name rpg-blog --project-directory /opt/rpg-blog logs -f`

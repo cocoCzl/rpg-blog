@@ -18,6 +18,7 @@ describeWhenBuilt('static build output', () => {
     'dist/feed.xml',
     'dist/sitemap.xml',
     'dist/robots.txt',
+    'dist/og/home.png',
   ]
 
   it('generates the core static routes after npm run build', () => {
@@ -47,5 +48,7 @@ describeWhenBuilt('static build output', () => {
     expect(feed).toContain('<rss')
     expect(sitemap).toContain('/posts/guild-first-commission')
     expect(robots).toContain('Sitemap:')
+    expect(home).toContain('/og/home.png')
+    expect(readFileSync('dist/posts/guild-first-commission/index.html', 'utf8')).toContain('/og/guild-first-commission.png')
   })
 })

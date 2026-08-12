@@ -28,6 +28,7 @@ const { Content } = await render(post)
   title={post.data.title}
   description={post.data.summary}
   canonicalUrl={getPostUrl(post, config.siteUrl)}
+  ogImage={`${config.siteUrl.replace(/\/$/, '')}/og/${encodeURIComponent(getPostSlug(post))}.png`}
   ogType="article"
   articleDate={getPostLastModified(post).toISOString()}
   jsonLd={{

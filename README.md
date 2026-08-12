@@ -1,142 +1,81 @@
 # rpg-blog
 
-A static-first pixel JRPG guild journal blog template for Astro. The default site opens like a polished RPG save-board menu: Command Menu navigation, Character Slot profile, Quest Board pinned entry, Recent Save Slots, Chapters, Clues, Profile, and an optional Inventory Toolkit.
+A static-first pixel JRPG personal blog template built with Astro, Markdown, and offline Docker deployment.
 
-The template is built for people who want a personal blog that stands out visually on GitHub while staying simple to deploy as static HTML.
+[简体中文](./README.zh-CN.md) · [Customization](./CUSTOMIZATION.md) · [Deployment](./DEPLOYMENT.md) · [Upgrading](./UPGRADING.md)
 
 ## Highlights
 
-- JRPG Guild Menu homepage instead of a generic blog hero
-- Save Board layout with Command Menu, Character Slot, Quest Board, and Save Slots
-- Dark pixel RPG menu palette with a supporting atmospheric guild backdrop
-- Journal Entries, Chapters, Clues, Profile, and Inventory Toolkit vocabulary
-- Bilingual site chrome for Chinese and English UI labels
-- Markdown/MDX content through Astro content collections
-- RSS, sitemap, robots.txt, Open Graph metadata, and a Docker deployment package
-- React integration with Pxlkit for pixel icon rendering
+- Distinctive Guild Menu homepage with Quest Board, Save Slots, Chapters, Clues, and Profile
+- Markdown/MDX content, drafts, featured entries, RSS, sitemap, and per-entry Open Graph images
+- Chinese/English interface labels; entries and SEO use the configured default language
+- Guided setup and post creation, with safe handling of existing content
+- Locally hosted fonts and reduced-motion support
+- Offline, checksummed Docker packages for `linux/amd64` and `linux/arm64`
 
-## Quick Start
+## Create your blog
 
-Requires Node.js `>=22`.
+Use GitHub's **Use this template**, download the source ZIP, or clone it:
 
 ```bash
-npm install
-npm run dev
-```
-
-Open `http://localhost:4321`.
-
-## Create Your Blog From This Template
-
-1. On GitHub, click **Use this template** to create your own repository, or fork and clone it manually.
-2. Clone your repository and enter the project folder.
-3. Install dependencies:
-
-```bash
-npm install
-```
-
-4. Run the setup wizard to replace the default guild identity with your own blog details:
-
-```bash
+git clone https://github.com/cocoCzl/rpg-blog.git my-blog
+cd my-blog
+npm ci
+npm run doctor
 npm run setup
-```
-
-The interactive wizard first asks for the wizard language. Choose `en` for English prompts or `zh` for Chinese prompts.
-
-For a non-interactive setup:
-
-```bash
-npm run setup -- --yes --wizardLocale en --titleZh "我的博客" --titleEn "My Blog" --content starter
-```
-
-5. Start local development:
-
-```bash
 npm run dev
 ```
 
-Open `http://localhost:4321` and review the homepage, Profile, Chapters, Clues, and Journal Entries.
+Requires Node.js `>=22.12.0`. Open `http://localhost:4321`.
 
-## Guild Setup Wizard
+On an untouched template, setup recommends replacing the five demo entries with one welcome entry. If it detects your own entries, it recommends keeping them. `starter` and `clear` display the affected files before making changes.
+
+Non-interactive setup must choose a content mode explicitly:
 
 ```bash
-npm run setup -- --yes --wizardLocale en --titleZh "企鹅工会" --titleEn "Penguin Guild" --content starter
+npm run setup -- --yes --content starter --wizardLocale en --titleZh "我的博客" --titleEn "My Blog"
 ```
 
-The wizard configures site identity, Profile fields, language, avatar, links, Inventory Toolkit visibility, and starter Journal Entry content. It updates `site.config.ts`, creates or updates `.env`, and can manage files in `src/content/posts/`.
+## Write and customize
 
-Content modes:
-
-- `keep`: keep existing Journal Entries.
-- `starter`: clear existing entries and create one starter entry for your blog.
-- `clear`: remove existing entries and leave the blog empty.
-
-## Write Your First Post
-
-The recommended path is the post wizard:
+Create a draft:
 
 ```bash
 npm run new:post
 ```
 
-It creates a Markdown draft in `src/content/posts/`. You can also add Markdown or MDX files manually.
+Most personal settings live in `site.config.ts`. Entries live in `src/content/posts/`; images live under `public/images/`. See [CUSTOMIZATION.md](./CUSTOMIZATION.md) and [USER_GUIDE.md](./USER_GUIDE.md).
 
-Add Markdown or MDX files to `src/content/posts/`.
+The language button switches the interface, site identity, and author fields. Article content, custom focus/toolbox text, canonical metadata, RSS, and Open Graph output use the build-time default language.
 
-```md
----
-title: "My First Journal Entry"
-date: 2026-03-21
-summary: "A short summary shown on the save board."
-tags: ["writing", "notes"]
-category: "Start"
-featured: true
-draft: false
----
+## Deploy with Docker
 
-Write your post here.
-```
-
-Supported frontmatter fields are `title`, `date`, `updated`, `summary`, `tags`, `category`, `cover`, `draft`, and `featured`.
-
-For a guide to every homepage button and module, plus how to organize entries, Chapters, Clues, and Inventory Toolkit items, see [USER_GUIDE.md](./USER_GUIDE.md).
-
-## Customize
-
-Most personal settings live in `site.config.ts`: site URL, Chinese and English titles, description, author name, avatar, bio, social links, default language, homepage focus items, Inventory Toolkit items, background image, effects, and navigation visibility.
-
-See [CUSTOMIZATION.md](./CUSTOMIZATION.md) for the full customization guide.
-
-## Docker Deployment Package
-
-This is the only supported production deployment. Configure and write locally, then create one uploadable package:
+Set the final HTTPS domain during setup, start Docker Desktop, then build one package for the server CPU:
 
 ```bash
-npm run package:deploy
+# Most cloud servers
+npm run package:deploy -- --platform linux/amd64
+
+# ARM servers and Raspberry Pi
+npm run package:deploy -- --platform linux/arm64
 ```
 
-It creates an archive in `release/` containing the Docker images, Caddy configuration, and installation script. Upload it to an Ubuntu/Debian server, extract it, and run `sudo ./install.sh`; Caddy configures HTTPS automatically.
+Upload the archive from `release/`, extract it on an Ubuntu/Debian server, and run `sudo ./install.sh`. The installer verifies its checksum and CPU architecture before loading the images. The server needs Docker Engine, the Compose plugin, ports 80/443, and working DNS; it does not need Git, Node, npm, or registry access.
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for requirements, updates, and troubleshooting.
-
-## Keep Template Updates
-
-Your personal content usually lives in `site.config.ts`, `src/content/posts/`, `public/images/`, and `.env`. Treat those as user-owned files when pulling future template changes.
-
-See [UPGRADING.md](./UPGRADING.md) for the recommended update flow.
-
-## Template Boundary
-
-This is a static blog template with RPG-style interface framing. It does not add playable RPG mechanics, controllable characters, combat, accounts, comments, databases, or backend gameplay state.
+See [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## Checks
 
 ```bash
+npm run doctor
 npm run build
 npm test
 npm run check:template
 npm run test:visual
 ```
 
-`check:template` protects the JRPG Guild Menu scope and rejects stale discarded visual direction in public source and docs.
+## Scope and license
+
+This is a static blog template, not a CMS or playable game. It intentionally has no accounts, comments, database, admin dashboard, or online editor. See [TEMPLATE_SCOPE.md](./TEMPLATE_SCOPE.md).
+
+Code and original artwork are MIT licensed. Bundled font and package licenses are listed in [ASSET_LICENSES.md](./ASSET_LICENSES.md).
