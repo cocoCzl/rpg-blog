@@ -9,7 +9,7 @@ ARG SITE_URL=http://localhost:4321
 ENV SITE_URL=${SITE_URL}
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.31-alpine
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
